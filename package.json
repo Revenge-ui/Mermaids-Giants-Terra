@@ -12,7 +12,7 @@
     "start": "npm run start -w @riftbound/server",
     "test": "npm run build -w @riftbound/shared && npm run build -w @riftbound/game-core && npm run build -w @riftbound/game-ai && npm run test -w @riftbound/game-core && npm run test -w @riftbound/game-ai && npm run test -w @riftbound/server && npm run test -w @riftbound/client",
     "test:e2e": "tsx scripts/network-smoke.ts && tsx scripts/reconnect-smoke.ts",
-    "typecheck": "npm run build -w @riftbound/shared && npm run build -w @riftbound/game-core && npm run typecheck -w @riftbound/game-ai && npm run typecheck -w @riftbound/server && npm run typecheck -w @riftbound/client && npm run typecheck -w @riftbound/client-cocos"
+    "typecheck": "npm run build -w @riftbound/shared && npm run build -w @riftbound/game-core && npm run build -w @riftbound/game-ai && npm run typecheck -w @riftbound/server && npm run typecheck -w @riftbound/client && npm run typecheck -w @riftbound/client-cocos"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
