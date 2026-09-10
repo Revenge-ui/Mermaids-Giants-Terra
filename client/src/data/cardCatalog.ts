@@ -1,17 +1,22 @@
 export type CardRarity = "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
+export type CatalogCardType = "MINION" | "SPELL";
+export type CardKeyword = "DAMAGE" | "HEAL" | "DRAW" | "BUFF";
 
 export interface CatalogCard {
   id: string;
   nameKey: string;
+  descriptionKey: string;
+  type: CatalogCardType;
   cost: number;
   rarity: CardRarity;
   rune: string;
+  keywords: readonly CardKeyword[];
   attack?: number;
   health?: number;
 }
 
 // 前端展示目录只包含公开信息，不包含任何对局中的秘密状态。
-export const CARD_CATALOG: readonly CatalogCard[] = [
+const BASE_CARD_CATALOG = [
   { id: "CARD_000001", nameKey: "card_000001_name", cost: 1, rarity: "COMMON", rune: "☘", attack: 1, health: 2 },
   { id: "CARD_000002", nameKey: "card_000002_name", cost: 1, rarity: "COMMON", rune: "✦", attack: 2, health: 1 },
   { id: "CARD_000003", nameKey: "card_000003_name", cost: 2, rarity: "COMMON", rune: "⬟", attack: 2, health: 3 },
@@ -32,8 +37,24 @@ export const CARD_CATALOG: readonly CatalogCard[] = [
   { id: "CARD_000018", nameKey: "card_000018_name", cost: 3, rarity: "EPIC", rune: "⬢" },
   { id: "CARD_000019", nameKey: "card_000019_name", cost: 1, rarity: "COMMON", rune: "✧" },
   { id: "CARD_000020", nameKey: "card_000020_name", cost: 4, rarity: "RARE", rune: "✥" }
-];
+] as const;
+
+const CARD_KEYWORDS: Readonly<Record<string, readonly CardKeyword[]>> = {
+  CARD_000015: ["DAMAGE"], CARD_000016: ["HEAL"], CARD_000017: ["DRAW"],
+  CARD_000018: ["BUFF"], CARD_000019: ["DAMAGE"], CARD_000020: ["HEAL"]
+};
+
+export const CARD_CATALOG: readonly CatalogCard[] = BASE_CARD_CATALOG.map((card) => ({
+  ...card,
+  descriptionKey: card.nameKey.replace("_name", "_description"),
+  type: "attack" in card ? "MINION" : "SPELL",
+  keywords: CARD_KEYWORDS[card.id] ?? []
+}));
 
 export const RARITY_LABEL: Readonly<Record<CardRarity, string>> = {
   COMMON: "普通", RARE: "稀有", EPIC: "史诗", LEGENDARY: "传说"
+};
+
+export const KEYWORD_LABEL: Readonly<Record<CardKeyword, string>> = {
+  DAMAGE: "伤害", HEAL: "治疗", DRAW: "抽牌", BUFF: "强化"
 };
