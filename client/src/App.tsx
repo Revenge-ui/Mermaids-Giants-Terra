@@ -9,9 +9,9 @@ import { Mana } from "./components/Mana";
 import { TurnBanner } from "./components/TurnBanner";
 import { errorMessage } from "./errorMessages";
 import { gameClient } from "./gameClient";
+import { LobbyRouter } from "./pages/LobbyRouter";
 import { emptySelection, isCardPlayable, isLegalTarget, isYourTurn, presentationFromEvents, targetModeForCard, type PendingAction, type PresentationState, type SelectionState } from "./uiModel";
 
-type LobbyMode = "HOME" | "FRIEND" | "JOIN";
 const emptyPresentation: PresentationState = { nonce: 0, floatingNumbers: [], summonedIds: [], dyingMinions: [], impactedIds: [] };
 
 function connectionText(status: ConnectionStatus): string {
@@ -20,39 +20,6 @@ function connectionText(status: ConnectionStatus): string {
   if (status === "RECONNECTING") return "正在恢复对局";
   if (status === "FAILED") return "无法连接服务器";
   return "网络断开";
-}
-
-function Lobby({ connectionStatus, room, error }: { connectionStatus: ConnectionStatus; room: RoomState | null; error: string }) {
-  const [mode, setMode] = useState<LobbyMode>("HOME");
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false);
-  const connected = connectionStatus === "CONNECTED";
-  const create = async () => { if (busy) return; setBusy(true); await gameClient.createRoom(name); setBusy(false); };
-  const createAi = async () => { if (busy) return; setBusy(true); await gameClient.createAiGame(name); setBusy(false); };
-  const join = async () => { if (busy) return; setBusy(true); await gameClient.joinRoom(code, name); setBusy(false); };
-
-  if (room) return (
-    <main className="lobby-shell"><section className="lobby-panel waiting-panel">
-      <div className="brand-mark">✦</div><p className="eyebrow">好友对战</p><h1>召集旅伴</h1>
-      <p className="room-code-label">六位房间码</p><strong className="room-code">{room.roomId}</strong>
-      <button className="copy-code" onClick={() => void navigator.clipboard?.writeText(room.roomId)}>复制房间码</button>
-      <p className="waiting-note">将房间码告诉朋友，第二位玩家加入后牌局会自动开始。</p>
-      <div className="versus-seats"><div><i>Ⅰ</i><span>{room.players[0]?.name || "玩家 1"}</span></div><b>VS</b><div className="vacant"><i>Ⅱ</i><span>等待对手…</span></div></div>
-      <div className="pulse-orbit" aria-hidden="true"><i /><i /><i /></div>
-    </section></main>
-  );
-  return (
-    <main className="lobby-shell"><section className="lobby-panel">
-      <div className="brand-mark">✦</div><p className="eyebrow">双人回合制卡牌对决</p><h1>裂隙牌局</h1>
-      <p className="lobby-intro">在古老石桌两端召唤异界生灵，以法术改写胜负。</p>
-      <label className="field-label" htmlFor="player-name">旅者称号</label><input id="player-name" maxLength={16} value={name} onChange={(event) => setName(event.target.value)} placeholder="无名旅者" />
-      {mode === "HOME" && <div className="lobby-actions mode-actions"><button className="primary-action" onClick={() => void createAi()} disabled={!connected || busy}>人机对战</button><button className="secondary-action" onClick={() => setMode("FRIEND")} disabled={!connected}>好友对战</button></div>}
-      {mode === "FRIEND" && <div className="friend-menu"><p className="mode-note">创建六位房间码，或加入朋友已经创建的牌局。</p><div className="lobby-actions"><button className="primary-action" onClick={() => void create()} disabled={!connected || busy}>创建房间</button><button className="secondary-action" onClick={() => setMode("JOIN")} disabled={!connected}>输入房间码</button></div><button className="text-action" onClick={() => setMode("HOME")}>返回主菜单</button></div>}
-      {mode === "JOIN" && <div className="join-form"><label className="field-label" htmlFor="room-code">六位房间码</label><input id="room-code" inputMode="numeric" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} placeholder="482913" /><div className="lobby-actions"><button className="primary-action" onClick={() => void join()} disabled={!connected || busy || code.length !== 6}>进入牌局</button><button className="secondary-action" onClick={() => setMode("FRIEND")}>返回</button></div></div>}
-      <p className={`connection ${connected ? "online" : "offline"}`}><i />{connectionText(connectionStatus)}</p>{error && <p className="lobby-error" role="alert">{error}</p>}
-    </section></main>
-  );
 }
 
 function playSounds(events: readonly GameEvent[], viewerId: string): void {
@@ -114,7 +81,7 @@ export function App() {
   const targetableFriendlyIds = useMemo(() => new Set(friendlyTargetable && game ? game.you.board.map((minion) => minion.instanceId) : []), [friendlyTargetable, game]);
   const summonedIds = useMemo(() => new Set(presentation.summonedIds), [presentation.summonedIds]);
   const impactedIds = useMemo(() => new Set(presentation.impactedIds), [presentation.impactedIds]);
-  if (!game) return <Lobby connectionStatus={connectionStatus} room={room} error={error} />;
+  if (!game) return <LobbyRouter connectionStatus={connectionStatus} room={room} error={error} />;
 
   const cancelSelection = () => { if (!pending) { setSelection(emptySelection(game.gameId)); setInspectedCard(null); } };
   const perform = async (kind: Exclude<PendingAction, null>, action: () => ReturnType<typeof gameClient.endTurn>) => {
