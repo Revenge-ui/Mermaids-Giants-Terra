@@ -21,6 +21,7 @@ const messages: Record<ErrorCode, string> = {
   [ErrorCode.INVALID_SESSION]: "重连凭证无效，请重新进入房间。",
   [ErrorCode.RECONNECT_EXPIRED]: "重连等待时间已经结束。",
   [ErrorCode.INVALID_PAYLOAD]: "服务器拒绝了格式错误的请求。",
+  [ErrorCode.INVALID_DECK]: "服务器判定这套卡组不合法，请重新检查卡牌数量。",
   [ErrorCode.RATE_LIMITED]: "操作过于频繁，请稍后再试。",
   [ErrorCode.INTERNAL_ERROR]: "服务器暂时无法处理这个操作。"
 };

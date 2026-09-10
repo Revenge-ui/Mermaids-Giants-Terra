@@ -13,6 +13,7 @@ export interface BaseCardDefinition {
   nameKey: string;
   descriptionKey: string;
   rune: string;
+  deckLimit?: number;
 }
 
 export interface MinionCardDefinition extends BaseCardDefinition {

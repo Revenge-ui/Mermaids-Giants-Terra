@@ -2,6 +2,7 @@ import {
   GameClient,
   type ActionTarget,
   type ConnectionStatus,
+  type DeckSubmission,
   type ErrorCode,
   type GameEvent,
   type PlayerViewState,
@@ -24,8 +25,8 @@ export class CocosGameClient {
   connect(): void { this.client.connect(); }
   disconnect(): void { this.client.disconnect(); }
   clearSession(): void { this.client.clearSession(); }
-  createRoom(playerName: string): Promise<RoomActionResult> { return this.client.createRoom(playerName); }
-  joinRoom(roomId: string, playerName: string): Promise<RoomActionResult> { return this.client.joinRoom(roomId, playerName); }
+  createRoom(playerName: string, deck: DeckSubmission): Promise<RoomActionResult> { return this.client.createRoom(playerName, deck); }
+  joinRoom(roomId: string, playerName: string, deck: DeckSubmission): Promise<RoomActionResult> { return this.client.joinRoom(roomId, playerName, deck); }
   playCard(cardInstanceId: string, target?: ActionTarget): void { void this.client.playCard(cardInstanceId, target); }
   attack(attackerId: string, target: ActionTarget): void { void this.client.attack(attackerId, target); }
   endTurn(): void { void this.client.endTurn(); }

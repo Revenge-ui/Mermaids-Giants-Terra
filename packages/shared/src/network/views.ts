@@ -29,6 +29,7 @@ export interface RoomPlayer {
   playerId: string;
   name: string;
   connected: boolean;
+  ready?: boolean;
 }
 
 export interface RoomState {

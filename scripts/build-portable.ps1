@@ -2,8 +2,8 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $releaseDirectory = Join-Path $projectRoot "release"
-$portableDirectory = Join-Path $releaseDirectory "CardGame-v0.4.2-Windows"
-$zipFile = Join-Path $releaseDirectory "CardGame-v0.4.2-Windows.zip"
+$portableDirectory = Join-Path $releaseDirectory "CardGame-v0.4.4-Windows"
+$zipFile = Join-Path $releaseDirectory "CardGame-v0.4.4-Windows.zip"
 $releaseFullPath = [IO.Path]::GetFullPath($releaseDirectory).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 $portableFullPath = [IO.Path]::GetFullPath($portableDirectory)
 if (-not $portableFullPath.StartsWith($releaseFullPath, [StringComparison]::OrdinalIgnoreCase)) {
@@ -57,7 +57,7 @@ Invoke-WebRequest -UseBasicParsing -Uri $licenseUrl -OutFile $licensePath
 & powershell -ExecutionPolicy Bypass -File (Join-Path $projectRoot "apps\launcher\build.ps1") -OutputFile (Join-Path $portableDirectory "CardGame.exe")
 if ($LASTEXITCODE -ne 0) { throw "Launcher build failed." }
 
-Set-Content -LiteralPath (Join-Path $portableDirectory "VERSION.txt") -Value "CardGame 0.4.2`r`nBundled Node.js $nodeVersion" -Encoding UTF8
+Set-Content -LiteralPath (Join-Path $portableDirectory "VERSION.txt") -Value "CardGame 0.4.4`r`nBundled Node.js $nodeVersion" -Encoding UTF8
 Compress-Archive -Path $portableDirectory -DestinationPath $zipFile -CompressionLevel Optimal
 
 $archive = Get-Item -LiteralPath $zipFile

@@ -157,3 +157,19 @@ test("surrender produces a winner without client-computed results", () => {
   assert.equal(result.state.winnerId, opponent.playerId);
   assert.equal(result.state.status, "FINISHED");
 });
+
+test("custom LocalDeck expansion creates unique authoritative CardInstances", () => {
+  const firstDeck = Array.from({ length: 30 }, (_, index) => `CARD_${String(index % 12 + 1).padStart(6, "0")}`);
+  const secondDeck = Array.from({ length: 30 }, (_, index) => `CARD_${String(index % 6 + 15).padStart(6, "0")}`);
+  const state = createGame("GAME_CUSTOM", "445566", [
+    { playerId: "P1", name: "甲", deckDefinitionIds: firstDeck },
+    { playerId: "P2", name: "乙", deckDefinitionIds: secondDeck }
+  ], 77).state;
+  for (const player of state.players) {
+    const instances = [...player.deck, ...player.hand];
+    assert.equal(instances.length, 30);
+    assert.equal(new Set(instances.map((card) => card.instanceId)).size, 30);
+  }
+  assert.equal([...state.players[0].deck, ...state.players[0].hand].every((card) => firstDeck.includes(card.definitionId)), true);
+  assert.equal([...state.players[1].deck, ...state.players[1].hand].every((card) => secondDeck.includes(card.definitionId)), true);
+});

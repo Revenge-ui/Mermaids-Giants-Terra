@@ -1,7 +1,16 @@
+import type { DeckSubmission } from "@riftbound/shared";
 import type { CatalogCard } from "./data/cardCatalog";
 
 export const MAX_DECK_SIZE = 30;
 const DECKS_KEY = "riftbound.decks.v0.1";
+const ACTIVE_DECK_KEY = "riftbound.activeDeck.v0.1";
+
+export const STARTER_DECK_CARDS: Readonly<Record<string, number>> = {
+  CARD_000001: 2, CARD_000002: 2, CARD_000003: 2, CARD_000004: 2,
+  CARD_000005: 2, CARD_000006: 2, CARD_000007: 2, CARD_000008: 2,
+  CARD_000009: 2, CARD_000010: 2, CARD_000011: 2, CARD_000012: 2,
+  CARD_000015: 2, CARD_000016: 2, CARD_000017: 2
+};
 
 export interface LocalDeck {
   id: string;
@@ -11,9 +20,14 @@ export interface LocalDeck {
 }
 
 export interface DeckEditResult { deck: LocalDeck; changed: boolean; reason?: "FULL" | "COPY_LIMIT"; }
+export interface DeckRenameResult { deck: LocalDeck; changed: boolean; error?: "EMPTY" | "TOO_LONG"; }
 
 export function createLocalDeck(name: string, now = Date.now()): LocalDeck {
   return { id: `DECK_${now}_${Math.random().toString(36).slice(2, 8)}`, name: name.trim() || "未命名卡组", cards: {}, createdAt: now };
+}
+
+export function createStarterDeck(now = Date.now()): LocalDeck {
+  return { ...createLocalDeck("裂隙入门套牌", now), cards: { ...STARTER_DECK_CARDS } };
 }
 
 export function loadDecks(storage: Pick<Storage, "getItem">): LocalDeck[] {
@@ -26,6 +40,30 @@ export function loadDecks(storage: Pick<Storage, "getItem">): LocalDeck[] {
 
 export function saveDecks(storage: Pick<Storage, "setItem">, decks: readonly LocalDeck[]): void {
   storage.setItem(DECKS_KEY, JSON.stringify(decks));
+}
+
+export function loadActiveDeckId(storage: Pick<Storage, "getItem">, decks: readonly LocalDeck[]): string | null {
+  const id = storage.getItem(ACTIVE_DECK_KEY);
+  return id && decks.some((deck) => deck.id === id) ? id : null;
+}
+
+export function saveActiveDeckId(storage: Pick<Storage, "setItem" | "removeItem">, deckId: string | null): void {
+  if (deckId) storage.setItem(ACTIVE_DECK_KEY, deckId); else storage.removeItem(ACTIVE_DECK_KEY);
+}
+
+export function renameLocalDeck(deck: LocalDeck, name: string): DeckRenameResult {
+  const normalized = name.trim();
+  if (!normalized) return { deck, changed: false, error: "EMPTY" };
+  if ([...normalized].length > 20) return { deck, changed: false, error: "TOO_LONG" };
+  return { deck: { ...deck, name: normalized }, changed: normalized !== deck.name };
+}
+
+export function deleteLocalDeck(decks: readonly LocalDeck[], deckId: string, activeDeckId: string | null): { decks: LocalDeck[]; activeDeckId: string | null } {
+  return { decks: decks.filter((deck) => deck.id !== deckId), activeDeckId: activeDeckId === deckId ? null : activeDeckId };
+}
+
+export function toDeckSubmission(deck: LocalDeck): DeckSubmission {
+  return { deckId: deck.id, cards: { ...deck.cards } };
 }
 
 export function deckCardCount(deck: LocalDeck): number {

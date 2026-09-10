@@ -1,4 +1,5 @@
 import { CARD_CATALOG, type CardRarity, type CatalogCard } from "./data/cardCatalog";
+import { STARTER_DECK_CARDS } from "./deckStorage";
 
 export type CollectionCounts = Record<string, number>;
 
@@ -35,13 +36,17 @@ export function openLocalPack(random: () => number = Math.random, size = 5): Cat
 }
 
 export function starterCollection(): CollectionCounts {
-  return Object.fromEntries(CARD_CATALOG.slice(0, 8).map((card) => [card.id, 1]));
+  return { ...STARTER_DECK_CARDS };
 }
 
 export function loadCollection(storage: Pick<Storage, "getItem">): CollectionCounts {
   try {
     const saved = storage.getItem(COLLECTION_KEY);
-    return saved ? { ...starterCollection(), ...JSON.parse(saved) as CollectionCounts } : starterCollection();
+    if (!saved) return starterCollection();
+    const parsed = JSON.parse(saved) as CollectionCounts;
+    const migrated = starterCollection();
+    for (const [cardId, count] of Object.entries(parsed)) migrated[cardId] = Math.max(migrated[cardId] ?? 0, count);
+    return migrated;
   } catch { return starterCollection(); }
 }
 

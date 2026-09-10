@@ -1,13 +1,18 @@
 import { randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import {
+  CARD_DATABASE,
   createGame,
   executeAction,
   GameRuleError,
   type GameResult,
   type GameState
 } from "@riftbound/game-core";
+import { NORMAL_AI_DECK } from "@riftbound/game-ai";
 import {
   ErrorCode,
+  expandDeckCards,
+  validateDeck,
+  type DeckSubmission,
   type GameStatus,
   type PlayerAction,
   type PlayerSession,
@@ -25,6 +30,8 @@ export interface RoomPlayer {
   connected: boolean;
   disconnectedAt?: number;
   isAi?: boolean;
+  deck?: DeckSubmission;
+  ready: boolean;
 }
 
 export interface Room {
@@ -92,10 +99,12 @@ export class RoomService {
 
   constructor(private readonly logger: Logger, private readonly options: RoomServiceOptions) {}
 
-  createRoom(socketId: string, playerName: string, now = Date.now()): SessionResult {
+  createRoom(socketId: string, playerName: string, deckOrNow?: DeckSubmission | number, nowOverride = Date.now()): SessionResult {
+    const deck = typeof deckOrNow === "number" ? undefined : deckOrNow;
+    const now = typeof deckOrNow === "number" ? deckOrNow : nowOverride;
     if (this.socketPlayers.has(socketId)) throw new RoomServiceError(ErrorCode.ALREADY_IN_ROOM);
     const roomId = this.createRoomCode();
-    const player = this.createPlayer(socketId, playerName);
+    const player = this.createPlayer(socketId, playerName, deck);
     const room: Room = {
       roomId,
       status: "WAITING",
@@ -109,14 +118,16 @@ export class RoomService {
     return { room, session: this.sessionFor(room, player) };
   }
 
-  joinRoom(roomId: string, socketId: string, playerName: string, now = Date.now()): JoinResult {
+  joinRoom(roomId: string, socketId: string, playerName: string, deckOrNow?: DeckSubmission | number, nowOverride = Date.now()): JoinResult {
+    const deck = typeof deckOrNow === "number" ? undefined : deckOrNow;
+    const now = typeof deckOrNow === "number" ? deckOrNow : nowOverride;
     if (this.socketPlayers.has(socketId)) throw new RoomServiceError(ErrorCode.ALREADY_IN_ROOM);
     const room = this.rooms.get(roomId.trim());
     if (!room) throw new RoomServiceError(ErrorCode.ROOM_NOT_FOUND);
     if (room.status !== "WAITING") throw new RoomServiceError(room.status === "FINISHED" ? ErrorCode.GAME_ALREADY_OVER : ErrorCode.ROOM_FULL);
     if (room.players.length >= 2) throw new RoomServiceError(ErrorCode.ROOM_FULL);
 
-    const player = this.createPlayer(socketId, playerName);
+    const player = this.createPlayer(socketId, playerName, deck);
     room.players.push(player);
     room.lastActivityAt = now;
     this.bindSocket(socketId, room.roomId, player.playerId);
@@ -125,8 +136,8 @@ export class RoomService {
     const gameId = `GAME_${room.roomId}_${now}`;
     const first = room.players[0]!;
     const initial = createGame(gameId, room.roomId, [
-      { playerId: first.playerId, name: first.name },
-      { playerId: player.playerId, name: player.name }
+      { playerId: first.playerId, name: first.name, deckDefinitionIds: first.deck ? this.validatedDefinitionIds(first.deck) : undefined },
+      { playerId: player.playerId, name: player.name, deckDefinitionIds: player.deck ? this.validatedDefinitionIds(player.deck) : undefined }
     ], randomInt(1, 0x7fffffff));
     room.game = initial.state;
     room.status = "PLAYING";
@@ -134,21 +145,25 @@ export class RoomService {
     return { room, initial, session: this.sessionFor(room, player) };
   }
 
-  createAiGame(socketId: string, playerName: string, now = Date.now()): AiGameResult {
+  createAiGame(socketId: string, playerName: string, deckOrNow?: DeckSubmission | number, nowOverride = Date.now()): AiGameResult {
+    const deck = typeof deckOrNow === "number" ? undefined : deckOrNow;
+    const now = typeof deckOrNow === "number" ? deckOrNow : nowOverride;
     if (this.socketPlayers.has(socketId)) throw new RoomServiceError(ErrorCode.ALREADY_IN_ROOM);
     const roomId = this.createRoomCode();
-    const human = this.createPlayer(socketId, playerName);
+    const human = this.createPlayer(socketId, playerName, deck);
     const ai: RoomPlayer = {
       playerId: `AI_${randomUUID()}`,
       name: "石桌守卫",
       sessionToken: newSessionToken(),
       connected: true,
-      isAi: true
+      isAi: true,
+      deck: NORMAL_AI_DECK,
+      ready: true
     };
     const gameId = `GAME_AI_${roomId}_${now}`;
     const initial = createGame(gameId, roomId, [
-      { playerId: human.playerId, name: human.name },
-      { playerId: ai.playerId, name: ai.name }
+      { playerId: human.playerId, name: human.name, deckDefinitionIds: human.deck ? this.validatedDefinitionIds(human.deck) : undefined },
+      { playerId: ai.playerId, name: ai.name, deckDefinitionIds: this.validatedDefinitionIds(NORMAL_AI_DECK) }
     ], randomInt(1, 0x7fffffff));
     const room: Room = {
       roomId,
@@ -279,7 +294,7 @@ export class RoomService {
   toRoomState(room: Room): RoomState {
     return {
       roomId: room.roomId,
-      players: room.players.map(({ playerId, name, connected }) => ({ playerId, name, connected })),
+      players: room.players.map(({ playerId, name, connected, ready }) => ({ playerId, name, connected, ready })),
       status: room.status
     };
   }
@@ -288,14 +303,23 @@ export class RoomService {
     for (const roomId of [...this.rooms.keys()]) this.destroyRoom(roomId);
   }
 
-  private createPlayer(socketId: string, playerName: string): RoomPlayer {
+  private createPlayer(socketId: string, playerName: string, deck?: DeckSubmission): RoomPlayer {
+    if (deck) this.validatedDefinitionIds(deck);
     return {
       playerId: newPlayerId(),
       name: safeName(playerName),
       sessionToken: newSessionToken(),
       socketId,
-      connected: true
+      connected: true,
+      deck,
+      ready: Boolean(deck)
     };
+  }
+
+  private validatedDefinitionIds(deck: DeckSubmission): string[] {
+    const validation = validateDeck(deck, CARD_DATABASE);
+    if (!validation.valid) throw new RoomServiceError(ErrorCode.INVALID_DECK);
+    return expandDeckCards(deck.cards);
   }
 
   private sessionFor(room: Room, player: RoomPlayer): PlayerSession {

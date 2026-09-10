@@ -1,9 +1,10 @@
 import type { ErrorCode } from "../enums/index.js";
+import type { DeckSubmission } from "../decks.js";
 import type { PlayerAction } from "./actions.js";
 import type { GameEvent } from "./events.js";
 import type { PlayerSession, PlayerViewState, RoomState } from "./views.js";
 
-export const GAME_PROTOCOL_VERSION = "0.3.0";
+export const GAME_PROTOCOL_VERSION = "0.4.4";
 
 export interface RoomActionResult {
   ok: boolean;
@@ -30,9 +31,9 @@ export interface ReconnectResult {
 }
 
 export interface ClientToServerEvents {
-  CREATE_ROOM: (payload: { playerName: string }, ack: (result: RoomActionResult) => void) => void;
-  CREATE_AI_GAME: (payload: { playerName: string }, ack: (result: RoomActionResult) => void) => void;
-  JOIN_ROOM: (payload: { roomId: string; playerName: string }, ack: (result: RoomActionResult) => void) => void;
+  CREATE_ROOM: (payload: { playerName: string; deck: DeckSubmission }, ack: (result: RoomActionResult) => void) => void;
+  CREATE_AI_GAME: (payload: { playerName: string; deck: DeckSubmission }, ack: (result: RoomActionResult) => void) => void;
+  JOIN_ROOM: (payload: { roomId: string; playerName: string; deck: DeckSubmission }, ack: (result: RoomActionResult) => void) => void;
   RECONNECT_GAME: (payload: PlayerSession, ack: (result: ReconnectResult) => void) => void;
   PLAYER_ACTION: (action: PlayerAction, ack: (result: PlayerActionResult) => void) => void;
 }

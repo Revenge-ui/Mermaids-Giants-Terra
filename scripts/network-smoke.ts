@@ -3,12 +3,14 @@ import {
   GameClient,
   type ActionTarget,
   type CardView,
+  type DeckSubmission,
   type PlayerViewState
 } from "@riftbound/shared";
 
 const serverUrl = process.env.E2E_SERVER_URL ?? "http://localhost:3001";
 const alpha = new GameClient(serverUrl);
 const beta = new GameClient(serverUrl);
+const testDeck: DeckSubmission = { deckId: "E2E_DECK", cards: { CARD_000001: 2, CARD_000002: 2, CARD_000003: 2, CARD_000004: 2, CARD_000005: 2, CARD_000006: 2, CARD_000007: 2, CARD_000008: 2, CARD_000009: 2, CARD_000010: 2, CARD_000011: 2, CARD_000012: 2, CARD_000015: 2, CARD_000016: 2, CARD_000017: 2 } };
 
 function waitForConnection(client: GameClient): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -53,13 +55,13 @@ async function sendAndWait(action: () => void): Promise<[PlayerViewState, Player
 
 try {
   await Promise.all([waitForConnection(alpha), waitForConnection(beta)]);
-  const created = await alpha.createRoom("E2E Alpha");
+  const created = await alpha.createRoom("E2E Alpha", testDeck);
   assert.equal(created.ok, true);
   assert.ok(created.roomId);
 
   const initialAlpha = waitForUpdate(alpha);
   const initialBeta = waitForUpdate(beta);
-  const joined = await beta.joinRoom(created.roomId!, "E2E Beta");
+  const joined = await beta.joinRoom(created.roomId!, "E2E Beta", testDeck);
   assert.equal(joined.ok, true);
   let [stateAlpha, stateBeta] = await Promise.all([initialAlpha, initialBeta]);
   assert.equal("hand" in stateAlpha.opponent, false);

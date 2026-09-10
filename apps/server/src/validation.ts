@@ -3,6 +3,10 @@ import { z } from "zod";
 const identifier = z.string().min(1).max(160);
 const playerName = z.string().max(64);
 const roomId = z.string().regex(/^\d{6}$/);
+const deck = z.object({
+  deckId: identifier,
+  cards: z.record(z.string().min(1).max(80), z.number().int().min(0).max(30)).refine((cards) => Object.keys(cards).length <= 60)
+}).strict();
 const target = z.discriminatedUnion("type", [
   z.object({ type: z.literal("HERO"), playerId: identifier }).strict(),
   z.object({ type: z.literal("MINION"), playerId: identifier, instanceId: identifier }).strict()
@@ -13,8 +17,8 @@ const metadata = {
   clientSequence: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)
 };
 
-export const createRoomPayloadSchema = z.object({ playerName }).strict();
-export const joinRoomPayloadSchema = z.object({ roomId, playerName }).strict();
+export const createRoomPayloadSchema = z.object({ playerName, deck }).strict();
+export const joinRoomPayloadSchema = z.object({ roomId, playerName, deck }).strict();
 export const reconnectPayloadSchema = z.object({
   roomId,
   playerId: identifier,

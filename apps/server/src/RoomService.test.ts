@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createPlayerView } from "@riftbound/game-core";
-import { ErrorCode, type PlayerAction } from "@riftbound/shared";
+import { ErrorCode, type DeckSubmission, type PlayerAction } from "@riftbound/shared";
 import { Logger } from "./logger.js";
 import { RoomService, RoomServiceError } from "./RoomService.js";
 
 const options = { reconnectGracePeriodMs: 1_000, waitingRoomTtlMs: 2_000, finishedRoomTtlMs: 3_000 };
 const service = () => new RoomService(new Logger("error"), options);
+const DECK_A: DeckSubmission = { deckId: "DECK_A", cards: { CARD_000001: 2, CARD_000002: 2, CARD_000003: 2, CARD_000004: 2, CARD_000005: 2, CARD_000006: 2, CARD_000007: 2, CARD_000008: 2, CARD_000009: 2, CARD_000010: 2, CARD_000011: 2, CARD_000012: 2, CARD_000015: 2, CARD_000016: 2, CARD_000017: 2 } };
+const DECK_B: DeckSubmission = { deckId: "DECK_B", cards: { CARD_000001: 2, CARD_000002: 2, CARD_000003: 2, CARD_000004: 2, CARD_000005: 2, CARD_000006: 2, CARD_000007: 2, CARD_000008: 2, CARD_000009: 2, CARD_000010: 2, CARD_000011: 2, CARD_000012: 2, CARD_000018: 2, CARD_000019: 2, CARD_000020: 2 } };
 
 function expectCode(operation: () => unknown, code: ErrorCode): void {
   assert.throws(operation, (error) => error instanceof RoomServiceError && error.code === code);
@@ -159,4 +161,49 @@ test("socket identity cannot submit another player's action", () => {
   const { rooms, first, second } = startedRoom();
   expectCode(() => rooms.applyPlayerAction("SOCKET_1", endTurn(second.playerId)), ErrorCode.PLAYER_ID_MISMATCH);
   assert.notEqual(first.playerId, second.playerId);
+});
+
+test("server rejects an invalid submitted deck before room creation", () => {
+  expectCode(() => service().createRoom("SOCKET_BAD", "甲", { deckId: "BAD", cards: { CARD_000001: 29 } }), ErrorCode.INVALID_DECK);
+});
+
+test("online players receive separate authoritative decks from their submissions", () => {
+  const rooms = service();
+  const first = rooms.createRoom("SOCKET_A", "甲", DECK_A, 500);
+  const joined = rooms.joinRoom(first.room.roomId, "SOCKET_B", "乙", DECK_B, 501);
+  const game = joined.room.game!;
+  const firstCards = [...game.players[0].deck, ...game.players[0].hand].map((card) => card.definitionId);
+  const secondCards = [...game.players[1].deck, ...game.players[1].hand].map((card) => card.definitionId);
+  assert.equal(firstCards.length, 30);
+  assert.equal(secondCards.length, 30);
+  assert.equal(firstCards.filter((id) => id === "CARD_000015").length, 2);
+  assert.equal(secondCards.filter((id) => id === "CARD_000018").length, 2);
+  assert.equal(new Set([...game.players[0].deck, ...game.players[0].hand, ...game.players[1].deck, ...game.players[1].hand].map((card) => card.instanceId)).size, 60);
+});
+
+test("AI uses its independent validated deck while the human uses the selected deck", () => {
+  const created = service().createAiGame("SOCKET_HUMAN", "旅者", DECK_B, 600);
+  const human = created.room.game!.players.find((player) => player.playerId === created.session.playerId)!;
+  const ai = created.room.game!.players.find((player) => player.playerId === created.aiPlayerId)!;
+  assert.equal([...human.deck, ...human.hand].filter((card) => card.definitionId === "CARD_000018").length, 2);
+  assert.equal([...ai.deck, ...ai.hand].filter((card) => card.definitionId === "CARD_000015").length, 2);
+  assert.notEqual(human.deck, ai.deck);
+});
+
+test("room views never expose submitted deck lists", () => {
+  const rooms = service();
+  const created = rooms.createRoom("SOCKET_A", "甲", DECK_A, 700);
+  const publicRoom = rooms.toRoomState(created.room);
+  assert.equal(JSON.stringify(publicRoom).includes("CARD_000001"), false);
+  assert.equal(publicRoom.players[0]?.ready, true);
+});
+
+test("reconnect preserves the existing shuffled deck instead of rebuilding it", () => {
+  const rooms = service();
+  const first = rooms.createRoom("SOCKET_A", "甲", DECK_A, 800);
+  rooms.joinRoom(first.room.roomId, "SOCKET_B", "乙", DECK_B, 801);
+  const before = JSON.stringify(first.room.game);
+  rooms.disconnect("SOCKET_A", 802);
+  rooms.reconnect(first.session.roomId, first.session.playerId, first.session.sessionToken, "SOCKET_A2", 803);
+  assert.equal(JSON.stringify(first.room.game), before);
 });

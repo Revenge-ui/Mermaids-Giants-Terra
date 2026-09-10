@@ -35,11 +35,14 @@ export function cloneGameState(state: GameState): GameState {
   };
 }
 
-function createDeck(gameId: string, playerId: string, random: RandomProvider): CardInstance[] {
-  const cards = DEFAULT_DECK_DEFINITION_IDS.map((definitionId, index) => ({
+export function createDeckInstances(gameId: string, playerId: string, definitionIds: readonly string[], random: RandomProvider): CardInstance[] {
+  const cards = definitionIds.map((definitionId, index) => {
+    getCardDefinition(definitionId);
+    return {
     instanceId: `${gameId}_${playerId}_CARD_${String(index + 1).padStart(3, "0")}`,
     definitionId
-  }));
+    };
+  });
   return random.shuffle(cards);
 }
 
@@ -50,7 +53,7 @@ function newPlayer(gameId: string, player: GamePlayer, random: RandomProvider): 
     health: MAX_HERO_HEALTH,
     mana: 0,
     maxMana: 0,
-    deck: createDeck(gameId, player.playerId, random),
+    deck: createDeckInstances(gameId, player.playerId, player.deckDefinitionIds ?? DEFAULT_DECK_DEFINITION_IDS, random),
     hand: [],
     board: []
   };

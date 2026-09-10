@@ -165,7 +165,7 @@ io.on("connection", (socket) => {
       if (!limiter.allow(`${socket.id}:create`, serverConfig.createRoomRateLimit)) throw rateLimited();
       const parsed = createRoomPayloadSchema.safeParse(rawPayload);
       if (!parsed.success) throw invalidPayload();
-      const { room, session } = roomService.createRoom(socket.id, parsed.data.playerName);
+      const { room, session } = roomService.createRoom(socket.id, parsed.data.playerName, parsed.data.deck);
       socket.join(room.roomId);
       socket.join(session.playerId);
       const result: RoomActionResult = { ok: true, roomId: room.roomId, playerId: session.playerId, session };
@@ -181,7 +181,7 @@ io.on("connection", (socket) => {
       if (!limiter.allow(`${socket.id}:create`, serverConfig.createRoomRateLimit)) throw rateLimited();
       const parsed = createRoomPayloadSchema.safeParse(rawPayload);
       if (!parsed.success) throw invalidPayload();
-      const { room, session, initial } = roomService.createAiGame(socket.id, parsed.data.playerName);
+      const { room, session, initial } = roomService.createAiGame(socket.id, parsed.data.playerName, parsed.data.deck);
       socket.join(room.roomId);
       socket.join(session.playerId);
       ack({ ok: true, roomId: room.roomId, playerId: session.playerId, session });
@@ -198,7 +198,7 @@ io.on("connection", (socket) => {
       if (!limiter.allow(`${socket.id}:join`, serverConfig.joinRoomRateLimit)) throw rateLimited();
       const parsed = joinRoomPayloadSchema.safeParse(rawPayload);
       if (!parsed.success) throw invalidPayload();
-      const { room, initial, session } = roomService.joinRoom(parsed.data.roomId, socket.id, parsed.data.playerName);
+      const { room, initial, session } = roomService.joinRoom(parsed.data.roomId, socket.id, parsed.data.playerName, parsed.data.deck);
       socket.join(room.roomId);
       socket.join(session.playerId);
       ack({ ok: true, roomId: room.roomId, playerId: session.playerId, session });

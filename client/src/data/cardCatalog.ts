@@ -11,6 +11,7 @@ export interface CatalogCard {
   rarity: CardRarity;
   rune: string;
   keywords: readonly CardKeyword[];
+  deckLimit: number;
   attack?: number;
   health?: number;
 }
@@ -48,6 +49,7 @@ export const CARD_CATALOG: readonly CatalogCard[] = BASE_CARD_CATALOG.map((card)
   ...card,
   descriptionKey: card.nameKey.replace("_name", "_description"),
   type: "attack" in card ? "MINION" : "SPELL",
+  deckLimit: card.rarity === "LEGENDARY" ? 1 : 2,
   keywords: CARD_KEYWORDS[card.id] ?? []
 }));
 

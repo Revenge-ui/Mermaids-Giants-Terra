@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { validateDeck } from "@riftbound/shared";
 import { DEFAULT_COLLECTION_FILTERS, filterCollectionCards, pageItems } from "../src/collectionModel";
 import { CARD_CATALOG } from "../src/data/cardCatalog";
-import { addCardToDeck, createLocalDeck, deckCardCount, deckManaCurve, loadDecks, MAX_DECK_SIZE, removeCardFromDeck, saveDecks } from "../src/deckStorage";
+import { STARTER_DECK_CARDS, addCardToDeck, createLocalDeck, deleteLocalDeck, deckCardCount, deckManaCurve, loadActiveDeckId, loadDecks, MAX_DECK_SIZE, removeCardFromDeck, renameLocalDeck, saveActiveDeckId, saveDecks, toDeckSubmission } from "../src/deckStorage";
 
 const owned = { CARD_000001: 2, CARD_000015: 1 };
 
@@ -54,4 +55,41 @@ test("本地卡组可以保存并重新载入", () => {
   const decks = [createLocalDeck("本地卡组", 3)];
   saveDecks(storage, decks);
   assert.deepEqual(loadDecks(storage), decks);
+});
+
+test("30 张合法卡组通过，29 张和 31 张失败", () => {
+  const legal = { cards: { ...STARTER_DECK_CARDS } };
+  assert.equal(validateDeck(legal, CARD_CATALOG, STARTER_DECK_CARDS).valid, true);
+  assert.equal(validateDeck({ cards: { ...STARTER_DECK_CARDS, CARD_000001: 1 } }, CARD_CATALOG, STARTER_DECK_CARDS).errors[0]?.code, "TOO_FEW_CARDS");
+  assert.equal(validateDeck({ cards: { ...STARTER_DECK_CARDS, CARD_000018: 1 } }, CARD_CATALOG, { ...STARTER_DECK_CARDS, CARD_000018: 1 }).errors[0]?.code, "TOO_MANY_CARDS");
+});
+
+test("统一校验拒绝超量普通卡、传说卡、库存不足和未知卡", () => {
+  const base = { ...STARTER_DECK_CARDS };
+  assert.equal(validateDeck({ cards: { ...base, CARD_000001: 3, CARD_000002: 1 } }, CARD_CATALOG).errors.some((error) => error.code === "COPY_LIMIT"), true);
+  assert.equal(validateDeck({ cards: { ...base, CARD_000013: 2, CARD_000001: 0 } }, CARD_CATALOG).errors.some((error) => error.code === "COPY_LIMIT"), true);
+  assert.equal(validateDeck({ cards: base }, CARD_CATALOG, { ...base, CARD_000001: 1 }).errors.some((error) => error.code === "NOT_OWNED"), true);
+  assert.equal(validateDeck({ cards: { ...base, CARD_UNKNOWN: 1, CARD_000001: 1 } }, CARD_CATALOG).errors.some((error) => error.code === "UNKNOWN_CARD"), true);
+});
+
+test("卡组重命名校验空名称并去除首尾空格", () => {
+  const deck = createLocalDeck("旧名称", 4);
+  assert.equal(renameLocalDeck(deck, "   ").error, "EMPTY");
+  assert.equal(renameLocalDeck(deck, "  新名称  ").deck.name, "新名称");
+});
+
+test("删除当前卡组会清空 activeDeckId，删除其他卡组不会", () => {
+  const first = createLocalDeck("甲", 5); const second = createLocalDeck("乙", 6);
+  assert.equal(deleteLocalDeck([first, second], first.id, first.id).activeDeckId, null);
+  assert.equal(deleteLocalDeck([first, second], second.id, first.id).activeDeckId, first.id);
+});
+
+test("当前卡组选择可保存，LocalDeck 可安全转换为提交数据", () => {
+  const values = new Map<string, string>();
+  const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); }, removeItem: (key: string) => { values.delete(key); } };
+  const deck = { ...createLocalDeck("出战", 7), cards: { ...STARTER_DECK_CARDS } };
+  saveActiveDeckId(storage, deck.id);
+  assert.equal(loadActiveDeckId(storage, [deck]), deck.id);
+  assert.deepEqual(toDeckSubmission(deck), { deckId: deck.id, cards: deck.cards });
+  assert.notEqual(toDeckSubmission(deck).cards, deck.cards);
 });

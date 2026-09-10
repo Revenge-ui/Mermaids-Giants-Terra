@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { GameClient, MemorySessionStore, type PlayerAction, type PlayerViewState } from "@riftbound/shared";
+import { GameClient, MemorySessionStore, type DeckSubmission, type PlayerAction, type PlayerViewState } from "@riftbound/shared";
 
 const serverUrl = process.env.E2E_SERVER_URL ?? "http://localhost:3001";
 const alphaStore = new MemorySessionStore();
 const betaStore = new MemorySessionStore();
 const alpha = new GameClient(serverUrl, { sessionStore: alphaStore });
 let beta = new GameClient(serverUrl, { sessionStore: betaStore });
+const testDeck: DeckSubmission = { deckId: "RECONNECT_DECK", cards: { CARD_000001: 2, CARD_000002: 2, CARD_000003: 2, CARD_000004: 2, CARD_000005: 2, CARD_000006: 2, CARD_000007: 2, CARD_000008: 2, CARD_000009: 2, CARD_000010: 2, CARD_000011: 2, CARD_000012: 2, CARD_000015: 2, CARD_000016: 2, CARD_000017: 2 } };
 
 function waitConnected(client: GameClient): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -45,11 +46,11 @@ function waitOpponent(client: GameClient, expected: boolean): Promise<void> {
 
 try {
   await Promise.all([waitConnected(alpha), waitConnected(beta)]);
-  const created = await alpha.createRoom("Reconnect Alpha");
+  const created = await alpha.createRoom("Reconnect Alpha", testDeck);
   assert.equal(created.ok, true);
   const alphaInitialPromise = waitUpdate(alpha);
   const betaInitialPromise = waitUpdate(beta);
-  const joined = await beta.joinRoom(created.roomId!, "Reconnect Beta");
+  const joined = await beta.joinRoom(created.roomId!, "Reconnect Beta", testDeck);
   assert.equal(joined.ok, true);
   const [alphaInitial, betaInitial] = await Promise.all([alphaInitialPromise, betaInitialPromise]);
 

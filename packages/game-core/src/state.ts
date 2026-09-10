@@ -45,4 +45,5 @@ export interface GameResult {
 export interface GamePlayer {
   playerId: string;
   name: string;
+  deckDefinitionIds?: readonly string[];
 }

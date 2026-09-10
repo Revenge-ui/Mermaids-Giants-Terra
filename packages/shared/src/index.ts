@@ -1,4 +1,5 @@
 export * from "./cards/types.js";
+export * from "./decks.js";
 export * from "./enums/index.js";
 export * from "./i18n/zh-CN.js";
 export * from "./network/actions.js";

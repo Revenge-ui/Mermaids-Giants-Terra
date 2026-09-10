@@ -1,5 +1,6 @@
 import { io, type Socket } from "socket.io-client";
 import { ErrorCode, type ConnectionStatus } from "../enums/index.js";
+import type { DeckSubmission } from "../decks.js";
 import type { ActionTarget, PlayerAction } from "./actions.js";
 import type { GameEvent } from "./events.js";
 import type {
@@ -83,25 +84,25 @@ export class GameClient {
     this.clientSequence = 0;
   }
 
-  async createRoom(playerName: string): Promise<RoomActionResult> {
+  async createRoom(playerName: string, deck: DeckSubmission): Promise<RoomActionResult> {
     const result = await new Promise<RoomActionResult>((resolve) => {
-      this.socket.emit("CREATE_ROOM", { playerName }, resolve);
+      this.socket.emit("CREATE_ROOM", { playerName, deck }, resolve);
     });
     this.acceptSession(result);
     return result;
   }
 
-  async createAiGame(playerName: string): Promise<RoomActionResult> {
+  async createAiGame(playerName: string, deck: DeckSubmission): Promise<RoomActionResult> {
     const result = await new Promise<RoomActionResult>((resolve) => {
-      this.socket.emit("CREATE_AI_GAME", { playerName }, resolve);
+      this.socket.emit("CREATE_AI_GAME", { playerName, deck }, resolve);
     });
     this.acceptSession(result);
     return result;
   }
 
-  async joinRoom(roomId: string, playerName: string): Promise<RoomActionResult> {
+  async joinRoom(roomId: string, playerName: string, deck: DeckSubmission): Promise<RoomActionResult> {
     const result = await new Promise<RoomActionResult>((resolve) => {
-      this.socket.emit("JOIN_ROOM", { roomId, playerName }, resolve);
+      this.socket.emit("JOIN_ROOM", { roomId, playerName, deck }, resolve);
     });
     this.acceptSession(result);
     return result;
