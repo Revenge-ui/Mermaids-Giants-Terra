@@ -8,6 +8,7 @@ export interface GameAIContext {
 
 export interface GameAI {
   chooseAction(context: GameAIContext): PlayerAction | null;
+  chooseMulligan(view: PlayerViewState): string[];
 }
 
 function metadata(context: GameAIContext) {
@@ -30,7 +31,8 @@ function cardValue(card: CardView): number {
   if (effect.type === "DEAL_DAMAGE") return effect.amount * 2 - card.cost * 0.15;
   if (effect.type === "DRAW_CARD") return effect.amount * 2.5 - card.cost * 0.15;
   if (effect.type === "HEAL") return effect.amount * 1.15 - card.cost * 0.15;
-  return effect.attack + effect.health - card.cost * 0.15;
+  if (effect.type === "BUFF") return effect.attack + effect.health - card.cost * 0.15;
+  return -card.cost * 0.15;
 }
 
 function playableTarget(view: PlayerViewState, card: CardView): ActionTarget | undefined | null {
@@ -42,11 +44,17 @@ function playableTarget(view: PlayerViewState, card: CardView): ActionTarget | u
     const target = [...view.you.board].sort((a, b) => threat(b) - threat(a))[0];
     return target ? { type: "MINION", playerId: view.you.playerId, instanceId: target.instanceId } : null;
   }
+  if (effect.type === "PROTOTYPE") return undefined;
   const killable = [...view.opponent.board].filter((minion) => minion.health <= effect.amount).sort((a, b) => threat(b) - threat(a))[0];
   return killable ? minionTarget(view, killable) : heroTarget(view);
 }
 
 export class RuleBasedGameAI implements GameAI {
+  chooseMulligan(view: PlayerViewState): string[] {
+    if (view.status !== "MULLIGAN" || view.mulliganConfirmed) return [];
+    return view.you.hand.filter((card) => card.definitionId !== "SPECIAL_BITCOIN_COIN" && card.cost >= 5).map((card) => card.instanceId);
+  }
+
   chooseAction(context: GameAIContext): PlayerAction | null {
     const view = context.view;
     if (view.status !== "PLAYING" || view.currentPlayerId !== view.you.playerId) return null;

@@ -1,0 +1,160 @@
+2026-09-10T18:15:34 [service] > riftbound-duel@0.4.4 dev
+2026-09-10T18:15:34 [service] > npm run build -w @riftbound/shared && npm run build -w @riftbound/game-core && npm run build -w @riftbound/game-ai && concurrently -n server,client -c cyan,magenta "npm run dev -w @riftbound/server" "npm run dev -w @riftbound/client"
+2026-09-10T18:15:34 [service] > @riftbound/shared@0.4.4 build
+2026-09-10T18:15:34 [service] > tsc -p tsconfig.json
+2026-09-10T18:15:35 [service] > @riftbound/game-core@0.4.4 build
+2026-09-10T18:15:35 [service] > tsc -p tsconfig.json
+2026-09-10T18:15:36 [service] > @riftbound/game-ai@0.4.4 build
+2026-09-10T18:15:36 [service] > tsc -p tsconfig.json
+2026-09-10T18:15:38 [service] [server] 
+2026-09-10T18:15:38 [service] [server] > @riftbound/server@0.4.4 dev
+2026-09-10T18:15:38 [service] [server] > tsx src/index.ts
+2026-09-10T18:15:38 [service] [server] 
+2026-09-10T18:15:38 [service] [client] 
+2026-09-10T18:15:38 [service] [client] > @riftbound/client@0.4.4 dev
+2026-09-10T18:15:38 [service] [client] > vite --host 0.0.0.0
+2026-09-10T18:15:38 [service] [client] 
+2026-09-10T18:15:38 [service] [client] [2m18:15:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
+2026-09-10T18:15:38 [service] [client] 
+2026-09-10T18:15:38 [service] [client]   [32m[1mVITE[22m v8.2.2[39m  [2mready in [0m[1m199[22m[2m[0m ms[22m
+2026-09-10T18:15:38 [service] [client] 
+2026-09-10T18:15:38 [service] [client]   [32m鉃?[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+2026-09-10T18:15:38 [service] [client]   [32m鉃?[39m  [1mNetwork[22m: [36mhttp://10.161.253.56:[1m5173[22m/[39m  [2m浠ュお缃?[22m
+2026-09-10T18:15:38 [service] [server] {"timestamp":"2026-09-10T10:15:38.529Z","level":"info","message":"server_start","host":"0.0.0.0","port":3001,"environment":"development","version":"0.4.4"}
+2026-09-10T18:15:40 [service] [server] {"timestamp":"2026-09-10T10:15:40.905Z","level":"info","message":"client_connected","socketId":"C_8uWy79AcmTO6UOAAAA"}
+2026-09-10T18:37:32 [service] > riftbound-duel@0.4.4 dev
+2026-09-10T18:37:32 [service] > npm run build -w @riftbound/shared && npm run build -w @riftbound/game-core && npm run build -w @riftbound/game-ai && concurrently -n server,client -c cyan,magenta "npm run dev -w @riftbound/server" "npm run dev -w @riftbound/client"
+2026-09-10T18:37:32 [service] > @riftbound/shared@0.4.4 build
+2026-09-10T18:37:32 [service] > tsc -p tsconfig.json
+2026-09-10T18:37:33 [service] > @riftbound/game-core@0.4.4 build
+2026-09-10T18:37:33 [service] > tsc -p tsconfig.json
+2026-09-10T18:37:34 [service] > @riftbound/game-ai@0.4.4 build
+2026-09-10T18:37:34 [service] > tsc -p tsconfig.json
+2026-09-10T18:37:35 [service] [server] 
+2026-09-10T18:37:35 [service] [server] > @riftbound/server@0.4.4 dev
+2026-09-10T18:37:35 [service] [server] > tsx src/index.ts
+2026-09-10T18:37:35 [service] [server] 
+2026-09-10T18:37:35 [service] [client] 
+2026-09-10T18:37:35 [service] [client] > @riftbound/client@0.4.4 dev
+2026-09-10T18:37:35 [service] [client] > vite --host 0.0.0.0
+2026-09-10T18:37:35 [service] [client] 
+2026-09-10T18:37:35 [service] [client] 
+2026-09-10T18:37:35 [service] [client]   [32m[1mVITE[22m v8.2.2[39m  [2mready in [0m[1m176[22m[2m[0m ms[22m
+2026-09-10T18:37:35 [service] [client] 
+2026-09-10T18:37:35 [service] [client]   [32m鉃?[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+2026-09-10T18:37:35 [service] [client]   [32m鉃?[39m  [1mNetwork[22m: [36mhttp://10.161.253.56:[1m5173[22m/[39m  [2m浠ュお缃?[22m
+2026-09-10T18:37:36 [service] [server] {"timestamp":"2026-09-10T10:37:36.056Z","level":"info","message":"server_start","host":"0.0.0.0","port":3001,"environment":"development","version":"0.4.4"}
+2026-09-10T18:37:38 [service] [server] {"timestamp":"2026-09-10T10:37:38.095Z","level":"info","message":"client_connected","socketId":"r01Tvx4KGiGh4MgoAAAA"}
+2026-09-10T18:41:10 [service] [server] {"timestamp":"2026-09-10T10:41:10.221Z","level":"info","message":"client_disconnected","socketId":"r01Tvx4KGiGh4MgoAAAA"}
+2026-09-10T20:18:55 [service] > riftbound-duel@0.4.4 dev
+2026-09-10T20:18:55 [service] > npm run build -w @riftbound/shared && npm run build -w @riftbound/game-core && npm run build -w @riftbound/game-ai && concurrently -n server,client -c cyan,magenta "npm run dev -w @riftbound/server" "npm run dev -w @riftbound/client"
+2026-09-10T20:18:56 [service] > @riftbound/shared@0.4.4 build
+2026-09-10T20:18:56 [service] > tsc -p tsconfig.json
+2026-09-10T20:18:57 [service] > @riftbound/game-core@0.4.4 build
+2026-09-10T20:18:57 [service] > tsc -p tsconfig.json
+2026-09-10T20:18:58 [service] > @riftbound/game-ai@0.4.4 build
+2026-09-10T20:18:58 [service] > tsc -p tsconfig.json
+2026-09-10T20:18:59 [service] [server] 
+2026-09-10T20:18:59 [service] [server] > @riftbound/server@0.4.4 dev
+2026-09-10T20:18:59 [service] [server] > tsx src/index.ts
+2026-09-10T20:18:59 [service] [server] 
+2026-09-10T20:18:59 [service] [client] 
+2026-09-10T20:18:59 [service] [client] > @riftbound/client@0.4.4 dev
+2026-09-10T20:18:59 [service] [client] > vite --host 0.0.0.0
+2026-09-10T20:18:59 [service] [client] 
+2026-09-10T20:18:59 [service] [client] [2m20:18:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
+2026-09-10T20:18:59 [service] [client] 
+2026-09-10T20:18:59 [service] [client]   [32m[1mVITE[22m v8.2.2[39m  [2mready in [0m[1m217[22m[2m[0m ms[22m
+2026-09-10T20:18:59 [service] [client] 
+2026-09-10T20:18:59 [service] [client]   [32m鉃?[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+2026-09-10T20:18:59 [service] [client]   [32m鉃?[39m  [1mNetwork[22m: [36mhttp://10.161.253.56:[1m5173[22m/[39m  [2m浠ュお缃?[22m
+2026-09-10T20:18:59 [service] [server] {"timestamp":"2026-09-10T12:18:59.915Z","level":"info","message":"server_start","host":"0.0.0.0","port":3001,"environment":"development","version":"0.4.4"}
+2026-09-10T20:19:02 [service] [server] {"timestamp":"2026-09-10T12:19:02.087Z","level":"info","message":"client_connected","socketId":"vXCk1WYpdwuefFRaAAAA"}
+2026-09-10T20:20:01 [service] [server] {"timestamp":"2026-09-10T12:20:01.660Z","level":"info","message":"ai_game_started","roomId":"451522","gameId":"GAME_AI_451522_1789042801658","playerId":"PLAYER_eebfe97c-d5f3-4060-a4a2-70a23e3e85e6","aiPlayerId":"AI_a4292a94-6d1c-4c3d-8dd1-e4f3793fff4b"}
+2026-09-10T20:21:15 [service] [server] {"timestamp":"2026-09-10T12:21:15.883Z","level":"info","message":"game_finished","roomId":"451522","gameId":"GAME_AI_451522_1789042801658","winnerId":"AI_a4292a94-6d1c-4c3d-8dd1-e4f3793fff4b"}
+2026-09-10T20:21:16 [service] [server] {"timestamp":"2026-09-10T12:21:16.839Z","level":"info","message":"client_disconnected","socketId":"vXCk1WYpdwuefFRaAAAA"}
+2026-09-10T20:21:16 [service] [server] {"timestamp":"2026-09-10T12:21:16.839Z","level":"info","message":"client_disconnected","roomId":"451522","playerId":"PLAYER_eebfe97c-d5f3-4060-a4a2-70a23e3e85e6"}
+2026-09-10T20:21:17 [service] [server] {"timestamp":"2026-09-10T12:21:17.309Z","level":"info","message":"client_connected","socketId":"-8VNtwecflIKuPj2AAAB"}
+2026-09-10T20:21:18 [service] [server] {"timestamp":"2026-09-10T12:21:18.522Z","level":"info","message":"ai_game_started","roomId":"618473","gameId":"GAME_AI_618473_1789042878521","playerId":"PLAYER_6d288701-9268-475f-af0c-1818aa0fc008","aiPlayerId":"AI_524dc2ad-16db-4a1d-97a1-2782c65055fb"}
+2026-09-10T20:22:23 [service] [server] {"timestamp":"2026-09-10T12:22:23.742Z","level":"info","message":"game_finished","roomId":"618473","gameId":"GAME_AI_618473_1789042878521","winnerId":"AI_524dc2ad-16db-4a1d-97a1-2782c65055fb"}
+2026-09-10T20:22:25 [service] [server] {"timestamp":"2026-09-10T12:22:25.016Z","level":"info","message":"client_disconnected","socketId":"-8VNtwecflIKuPj2AAAB"}
+2026-09-10T20:22:25 [service] [server] {"timestamp":"2026-09-10T12:22:25.016Z","level":"info","message":"client_disconnected","roomId":"618473","playerId":"PLAYER_6d288701-9268-475f-af0c-1818aa0fc008"}
+2026-09-10T20:22:25 [service] [server] {"timestamp":"2026-09-10T12:22:25.443Z","level":"info","message":"client_connected","socketId":"GnMj7iLqCe6VVEuZAAAC"}
+2026-09-10T20:22:26 [service] [server] {"timestamp":"2026-09-10T12:22:26.442Z","level":"info","message":"client_disconnected","socketId":"GnMj7iLqCe6VVEuZAAAC"}
+2026-09-10T21:30:49 [service] > riftbound-duel@0.4.4 dev
+2026-09-10T21:30:49 [service] > npm run build -w @riftbound/shared && npm run build -w @riftbound/game-core && npm run build -w @riftbound/game-ai && concurrently -n server,client -c cyan,magenta "npm run dev -w @riftbound/server" "npm run dev -w @riftbound/client"
+2026-09-10T21:30:50 [service] > @riftbound/shared@0.4.4 build
+2026-09-10T21:30:50 [service] > tsc -p tsconfig.json
+2026-09-10T21:30:51 [service] > @riftbound/game-core@0.4.4 build
+2026-09-10T21:30:51 [service] > tsc -p tsconfig.json
+2026-09-10T21:30:53 [service] > @riftbound/game-ai@0.4.4 build
+2026-09-10T21:30:53 [service] > tsc -p tsconfig.json
+2026-09-10T21:30:57 [service] [client] 
+2026-09-10T21:30:57 [service] [client] > @riftbound/client@0.4.4 dev
+2026-09-10T21:30:57 [service] [client] > vite --host 0.0.0.0
+2026-09-10T21:30:57 [service] [client] 
+2026-09-10T21:30:57 [service] [server] 
+2026-09-10T21:30:57 [service] [server] > @riftbound/server@0.4.4 dev
+2026-09-10T21:30:57 [service] [server] > tsx src/index.ts
+2026-09-10T21:30:57 [service] [server] 
+2026-09-10T21:30:58 [service] [client] 
+2026-09-10T21:30:58 [service] [client]   [32m[1mVITE[22m v8.2.2[39m  [2mready in [0m[1m673[22m[2m[0m ms[22m
+2026-09-10T21:30:58 [service] [client] 
+2026-09-10T21:30:58 [service] [client]   [32m鉃?[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+2026-09-10T21:30:58 [service] [client]   [32m鉃?[39m  [1mNetwork[22m: [36mhttp://10.161.253.56:[1m5173[22m/[39m  [2m浠ュお缃?[22m
+2026-09-10T21:31:02 [service] [server] {"timestamp":"2026-09-10T13:31:02.645Z","level":"info","message":"server_start","host":"0.0.0.0","port":3001,"environment":"development","version":"0.4.4"}
+2026-09-10T21:31:04 [service] [server] {"timestamp":"2026-09-10T13:31:04.505Z","level":"info","message":"client_connected","socketId":"Wt5z5qRG9mxq2OGdAAAA"}
+2026-09-10T21:39:33 [service] [server] {"timestamp":"2026-09-10T13:39:33.939Z","level":"info","message":"ai_game_started","roomId":"658518","gameId":"GAME_AI_658518_1789047573938","playerId":"PLAYER_aa83fc43-d207-4c85-bc5f-039454670c9d","aiPlayerId":"AI_0635cdae-e1e2-4453-8f72-931cf4dc76b6"}
+2026-09-10T21:39:42 [service] [server] {"timestamp":"2026-09-10T13:39:42.071Z","level":"info","message":"game_finished","roomId":"658518","gameId":"GAME_AI_658518_1789047573938","winnerId":"AI_0635cdae-e1e2-4453-8f72-931cf4dc76b6"}
+2026-09-10T21:39:43 [service] [server] {"timestamp":"2026-09-10T13:39:43.195Z","level":"info","message":"client_disconnected","socketId":"Wt5z5qRG9mxq2OGdAAAA"}
+2026-09-10T21:39:43 [service] [server] {"timestamp":"2026-09-10T13:39:43.195Z","level":"info","message":"client_disconnected","roomId":"658518","playerId":"PLAYER_aa83fc43-d207-4c85-bc5f-039454670c9d"}
+2026-09-10T21:39:43 [service] [server] {"timestamp":"2026-09-10T13:39:43.636Z","level":"info","message":"client_connected","socketId":"U0rkXWxcNXB2n_XTAAAB"}
+2026-09-10T21:39:44 [service] [server] {"timestamp":"2026-09-10T13:39:44.425Z","level":"info","message":"ai_game_started","roomId":"264266","gameId":"GAME_AI_264266_1789047584425","playerId":"PLAYER_9935a052-6eec-418c-8647-56fc91b66de3","aiPlayerId":"AI_c06699f8-0e43-431e-8852-e39a77824baf"}
+2026-09-10T21:39:45 [service] [server] {"timestamp":"2026-09-10T13:39:45.958Z","level":"info","message":"game_finished","roomId":"264266","gameId":"GAME_AI_264266_1789047584425","winnerId":"AI_c06699f8-0e43-431e-8852-e39a77824baf"}
+2026-09-10T21:39:46 [service] [server] {"timestamp":"2026-09-10T13:39:46.620Z","level":"info","message":"client_disconnected","socketId":"U0rkXWxcNXB2n_XTAAAB"}
+2026-09-10T21:39:46 [service] [server] {"timestamp":"2026-09-10T13:39:46.620Z","level":"info","message":"client_disconnected","roomId":"264266","playerId":"PLAYER_9935a052-6eec-418c-8647-56fc91b66de3"}
+2026-09-10T21:39:47 [service] [server] {"timestamp":"2026-09-10T13:39:47.031Z","level":"info","message":"client_connected","socketId":"U4dfpC_YeBhryjIOAAAC"}
+2026-09-10T21:41:54 [service] [server] {"timestamp":"2026-09-10T13:41:54.045Z","level":"info","message":"ai_game_started","roomId":"102066","gameId":"GAME_AI_102066_1789047714044","playerId":"PLAYER_455cb2d2-4946-41bd-9712-478f2ce7f8c8","aiPlayerId":"AI_4e25aed4-0418-46ff-a894-d8ba6696e041"}
+2026-09-10T21:41:55 [service] [server] {"timestamp":"2026-09-10T13:41:55.541Z","level":"info","message":"game_finished","roomId":"102066","gameId":"GAME_AI_102066_1789047714044","winnerId":"AI_4e25aed4-0418-46ff-a894-d8ba6696e041"}
+2026-09-10T21:41:56 [service] [server] {"timestamp":"2026-09-10T13:41:56.578Z","level":"info","message":"client_disconnected","socketId":"U4dfpC_YeBhryjIOAAAC"}
+2026-09-10T21:41:56 [service] [server] {"timestamp":"2026-09-10T13:41:56.578Z","level":"info","message":"client_disconnected","roomId":"102066","playerId":"PLAYER_455cb2d2-4946-41bd-9712-478f2ce7f8c8"}
+2026-09-10T21:41:57 [service] [server] {"timestamp":"2026-09-10T13:41:57.022Z","level":"info","message":"client_connected","socketId":"ds8Co1qWeZlGcfLRAAAD"}
+2026-09-10T21:44:43 [service] [server] {"timestamp":"2026-09-10T13:44:43.294Z","level":"info","message":"room_destroyed","roomId":"658518"}
+2026-09-10T21:44:53 [service] [server] {"timestamp":"2026-09-10T13:44:53.306Z","level":"info","message":"room_destroyed","roomId":"264266"}
+2026-09-10T21:47:03 [service] [server] {"timestamp":"2026-09-10T13:47:03.397Z","level":"info","message":"room_destroyed","roomId":"102066"}
+2026-09-10T21:47:42 [service] [server] {"timestamp":"2026-09-10T13:47:42.977Z","level":"info","message":"client_disconnected","socketId":"ds8Co1qWeZlGcfLRAAAD"}
+2026-09-10T21:51:32 [service] [client] [2m21:51:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/components/Hand.tsx[22m
+2026-09-10T21:51:32 [service] [client] [2m21:51:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+2026-09-10T23:45:51 [service] > riftbound-duel@0.4.4 dev
+2026-09-10T23:45:51 [service] > npm run build -w @riftbound/shared && npm run build -w @riftbound/game-core && npm run build -w @riftbound/game-ai && concurrently -n server,client -c cyan,magenta "npm run dev -w @riftbound/server" "npm run dev -w @riftbound/client"
+2026-09-10T23:45:52 [service] > @riftbound/shared@0.4.4 build
+2026-09-10T23:45:52 [service] > tsc -p tsconfig.json
+2026-09-10T23:45:53 [service] > @riftbound/game-core@0.4.4 build
+2026-09-10T23:45:53 [service] > tsc -p tsconfig.json
+2026-09-10T23:45:55 [service] > @riftbound/game-ai@0.4.4 build
+2026-09-10T23:45:55 [service] > tsc -p tsconfig.json
+2026-09-10T23:45:56 [service] [server] 
+2026-09-10T23:45:56 [service] [server] > @riftbound/server@0.4.4 dev
+2026-09-10T23:45:56 [service] [server] > tsx src/index.ts
+2026-09-10T23:45:56 [service] [server] 
+2026-09-10T23:45:56 [service] [client] 
+2026-09-10T23:45:56 [service] [client] > @riftbound/client@0.4.4 dev
+2026-09-10T23:45:56 [service] [client] > vite --host 0.0.0.0
+2026-09-10T23:45:56 [service] [client] 
+2026-09-10T23:45:56 [service] [client] 
+2026-09-10T23:45:56 [service] [client]   [32m[1mVITE[22m v8.2.2[39m  [2mready in [0m[1m227[22m[2m[0m ms[22m
+2026-09-10T23:45:56 [service] [client] 
+2026-09-10T23:45:56 [service] [client]   [32m鉃?[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+2026-09-10T23:45:56 [service] [client]   [32m鉃?[39m  [1mNetwork[22m: [36mhttp://10.161.253.56:[1m5173[22m/[39m  [2m浠ュお缃?[22m
+2026-09-10T23:45:57 [service] [server] {"timestamp":"2026-09-10T15:45:57.169Z","level":"info","message":"server_start","host":"0.0.0.0","port":3001,"environment":"development","version":"0.4.4"}
+2026-09-10T23:45:59 [service] [server] {"timestamp":"2026-09-10T15:45:59.039Z","level":"info","message":"client_connected","socketId":"i33lxtaTPVwVK5uMAAAA"}
+2026-09-10T23:46:53 [service] [server] {"timestamp":"2026-09-10T15:46:53.722Z","level":"info","message":"ai_game_started","roomId":"165073","gameId":"GAME_AI_165073_1789055213721","playerId":"PLAYER_e429a74a-d5fc-409a-b909-70fb7829e787","aiPlayerId":"AI_57dbe631-3b6d-4ea1-8fda-093d89a24db4"}
+2026-09-10T23:47:42 [service] [server] {"timestamp":"2026-09-10T15:47:42.394Z","level":"info","message":"client_disconnected","socketId":"i33lxtaTPVwVK5uMAAAA"}
+2026-09-10T23:47:42 [service] [server] {"timestamp":"2026-09-10T15:47:42.394Z","level":"info","message":"client_disconnected","roomId":"165073","playerId":"PLAYER_e429a74a-d5fc-409a-b909-70fb7829e787"}
+2026-09-10T23:47:45 [service] [server] {"timestamp":"2026-09-10T15:47:45.862Z","level":"info","message":"client_connected","socketId":"iZRsHO_3v2GUM2CrAAAB"}
+2026-09-10T23:47:45 [service] [server] {"timestamp":"2026-09-10T15:47:45.864Z","level":"info","message":"player_reconnected","roomId":"165073","playerId":"PLAYER_e429a74a-d5fc-409a-b909-70fb7829e787"}
+2026-09-10T23:47:48 [service] [server] {"timestamp":"2026-09-10T15:47:48.698Z","level":"info","message":"game_finished","roomId":"165073","gameId":"GAME_AI_165073_1789055213721","winnerId":"AI_57dbe631-3b6d-4ea1-8fda-093d89a24db4"}
+2026-09-10T23:47:49 [service] [server] {"timestamp":"2026-09-10T15:47:49.591Z","level":"info","message":"client_disconnected","socketId":"iZRsHO_3v2GUM2CrAAAB"}
+2026-09-10T23:47:49 [service] [server] {"timestamp":"2026-09-10T15:47:49.591Z","level":"info","message":"client_disconnected","roomId":"165073","playerId":"PLAYER_e429a74a-d5fc-409a-b909-70fb7829e787"}
+2026-09-10T23:47:50 [service] [server] {"timestamp":"2026-09-10T15:47:50.065Z","level":"info","message":"client_connected","socketId":"rF2z_5_KUEiQB99NAAAC"}
+2026-09-10T23:48:32 [service] [server] {"timestamp":"2026-09-10T15:48:32.893Z","level":"info","message":"client_disconnected","socketId":"rF2z_5_KUEiQB99NAAAC"}

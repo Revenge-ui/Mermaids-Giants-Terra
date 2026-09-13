@@ -1,4 +1,4 @@
-import type { GameEvent, GameStatus } from "@riftbound/shared";
+import type { DeckFaction, GameEvent, GameStatus } from "@riftbound/shared";
 
 export interface CardInstance {
   instanceId: string;
@@ -17,9 +17,11 @@ export interface MinionInstance {
 export interface PlayerState {
   playerId: string;
   name: string;
+  faction: DeckFaction;
   health: number;
   mana: number;
   maxMana: number;
+  temporaryMana: number;
   deck: CardInstance[];
   hand: CardInstance[];
   board: MinionInstance[];
@@ -30,10 +32,12 @@ export interface GameState {
   roomId: string;
   turn: number;
   currentPlayerId: string;
+  firstPlayerId: string;
   status: GameStatus;
   players: [PlayerState, PlayerState];
   randomSeed: number;
   revision: number;
+  mulliganConfirmedPlayerIds: string[];
   winnerId?: string;
 }
 
@@ -45,5 +49,6 @@ export interface GameResult {
 export interface GamePlayer {
   playerId: string;
   name: string;
+  faction?: DeckFaction;
   deckDefinitionIds?: readonly string[];
 }

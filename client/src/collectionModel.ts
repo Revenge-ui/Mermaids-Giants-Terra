@@ -1,9 +1,9 @@
 import { translateZhCn } from "@riftbound/shared";
-import type { CardKeyword, CardRarity, CatalogCard, CatalogCardType } from "./data/cardCatalog";
+import type { CardKeyword, CardRarity, CatalogCard } from "./data/cardCatalog";
 import type { CollectionCounts } from "./localProgress";
 
 export type ManaFilter = "ALL" | 0 | 1 | 2 | 3 | 4 | 5 | 6 | "7+";
-export type CardCategory = "ALL" | CatalogCardType;
+export type CardCategory = "ALL" | "MERMAID" | "GIANT" | "SPELL";
 export type CardSort = "COST" | "NAME" | "RARITY";
 
 export interface CollectionFiltersState {
@@ -25,7 +25,8 @@ export const DEFAULT_COLLECTION_FILTERS: CollectionFiltersState = {
 export function filterCollectionCards(cards: readonly CatalogCard[], owned: CollectionCounts, filters: CollectionFiltersState): CatalogCard[] {
   const query = filters.search.trim().toLocaleLowerCase("zh-CN");
   return cards.filter((card) => {
-    if (filters.category !== "ALL" && card.type !== filters.category) return false;
+    if (filters.category === "SPELL" && card.type !== "SPELL") return false;
+    if ((filters.category === "MERMAID" || filters.category === "GIANT") && card.faction !== filters.category) return false;
     if (filters.mana !== "ALL" && (filters.mana === "7+" ? card.cost < 7 : card.cost !== filters.mana)) return false;
     if (filters.ownedOnly && (owned[card.id] ?? 0) < 1) return false;
     if (filters.rarities.length && !filters.rarities.includes(card.rarity)) return false;

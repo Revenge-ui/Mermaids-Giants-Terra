@@ -1,0 +1,2 @@
+﻿Mermaids-Giants-Terra 0.4.4
+Bundled Node.js 24.19.0

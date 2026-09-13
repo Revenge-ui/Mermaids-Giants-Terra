@@ -1,4 +1,4 @@
-export type GameSound = "playCard" | "attack" | "damage" | "heal" | "draw" | "turnStart" | "victory" | "defeat";
+export type GameSound = "hover" | "click" | "openPack" | "cardReveal" | "legendaryReveal" | "playCard" | "attack" | "damage" | "heal" | "draw" | "turnStart" | "victory" | "defeat";
 
 export interface AudioManager {
   play(sound: GameSound): void;
@@ -15,3 +15,4 @@ class SilentAudioManager implements AudioManager {
 }
 
 export const audioManager: AudioManager = new SilentAudioManager();
+export const UIAudioManager = audioManager;

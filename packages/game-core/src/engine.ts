@@ -10,7 +10,7 @@ import {
   type PublicPlayerState,
   type SpellCardDefinition
 } from "@riftbound/shared";
-import { DEFAULT_DECK_DEFINITION_IDS, getCardDefinition } from "./cards/database.js";
+import { DEFAULT_DECK_DEFINITION_IDS, getCardDefinition, SPECIAL_BITCOIN_COIN_ID } from "./cards/database.js";
 import { GameRuleError } from "./GameRuleError.js";
 import { SeededRandom, type RandomProvider } from "./random/RandomProvider.js";
 import type { CardInstance, GamePlayer, GameResult, GameState, MinionInstance, PlayerState } from "./state.js";
@@ -18,6 +18,9 @@ import type { CardInstance, GamePlayer, GameResult, GameState, MinionInstance, P
 const MAX_HERO_HEALTH = 30;
 const MAX_MANA = 10;
 const MAX_BOARD_SIZE = 7;
+export const STARTING_HAND_FIRST = 3;
+export const STARTING_HAND_SECOND = 4;
+export const SECOND_PLAYER_BONUS_CARD = SPECIAL_BITCOIN_COIN_ID;
 
 function clonePlayer(player: PlayerState): PlayerState {
   return {
@@ -31,6 +34,7 @@ function clonePlayer(player: PlayerState): PlayerState {
 export function cloneGameState(state: GameState): GameState {
   return {
     ...state,
+    mulliganConfirmedPlayerIds: [...state.mulliganConfirmedPlayerIds],
     players: [clonePlayer(state.players[0]), clonePlayer(state.players[1])]
   };
 }
@@ -50,9 +54,11 @@ function newPlayer(gameId: string, player: GamePlayer, random: RandomProvider): 
   return {
     playerId: player.playerId,
     name: player.name,
+    faction: player.faction ?? "MERMAID",
     health: MAX_HERO_HEALTH,
     mana: 0,
     maxMana: 0,
+    temporaryMana: 0,
     deck: createDeckInstances(gameId, player.playerId, player.deckDefinitionIds ?? DEFAULT_DECK_DEFINITION_IDS, random),
     hand: [],
     board: []
@@ -92,6 +98,7 @@ function drawCard(state: GameState, playerId: string, events: GameEvent[]): void
 
 function startTurn(state: GameState, playerId: string, events: GameEvent[]): void {
   const player = playerById(state, playerId);
+  player.temporaryMana = 0;
   player.maxMana = Math.min(MAX_MANA, player.maxMana + 1);
   player.mana = player.maxMana;
   player.board.forEach((minion) => { minion.canAttack = true; });
@@ -118,15 +125,19 @@ export function createGame(
     roomId,
     turn: 1,
     currentPlayerId: states[firstIndex].playerId,
-    status: "PLAYING",
+    firstPlayerId: states[firstIndex].playerId,
+    status: "MULLIGAN",
     players: states,
     randomSeed: seed,
-    revision: 0
+    revision: 0,
+    mulliganConfirmedPlayerIds: []
   };
   const events: GameEvent[] = [{ type: "GAME_STARTED", gameId, firstPlayerId: state.currentPlayerId }];
-  for (let count = 0; count < 3; count += 1) drawCard(state, states[firstIndex].playerId, events);
-  for (let count = 0; count < 4; count += 1) drawCard(state, states[secondIndex].playerId, events);
-  startTurn(state, states[firstIndex].playerId, events);
+  for (let count = 0; count < STARTING_HAND_FIRST; count += 1) drawCard(state, states[firstIndex].playerId, events);
+  for (let count = 0; count < STARTING_HAND_SECOND; count += 1) drawCard(state, states[secondIndex].playerId, events);
+  const bonus = { instanceId: `${gameId}_${states[secondIndex].playerId}_BONUS_BITCOIN`, definitionId: SECOND_PLAYER_BONUS_CARD };
+  states[secondIndex].hand.push(bonus);
+  events.push({ type: "BONUS_CARD_GRANTED", playerId: states[secondIndex].playerId, cardInstanceId: bonus.instanceId, definitionId: bonus.definitionId });
   return { state, events };
 }
 
@@ -200,6 +211,11 @@ function applySpell(state: GameState, player: PlayerState, card: CardInstance, d
     minion.health += effect.health;
     minion.maxHealth += effect.health;
   }
+  if (effect.type === "GAIN_TEMP_MANA") {
+    player.temporaryMana += effect.amount;
+    player.mana += effect.amount;
+    events.push({ type: "TEMP_MANA_GAINED", playerId: player.playerId, amount: effect.amount });
+  }
   if (effect.type === "DEAL_DAMAGE" && target) applyDamage(state, card.instanceId, target, effect.amount, events);
 }
 
@@ -257,7 +273,8 @@ function attack(state: GameState, action: Extract<PlayerAction, { type: "ATTACK"
 }
 
 function endTurn(state: GameState, action: Extract<PlayerAction, { type: "END_TURN" }>, events: GameEvent[]): void {
-  requireTurn(state, action.playerId);
+  const player = requireTurn(state, action.playerId);
+  player.temporaryMana = 0;
   const opponent = opponentOf(state, action.playerId);
   events.push({ type: "TURN_ENDED", playerId: action.playerId, turn: state.turn });
   state.turn += 1;
@@ -265,7 +282,7 @@ function endTurn(state: GameState, action: Extract<PlayerAction, { type: "END_TU
 }
 
 function surrender(state: GameState, action: Extract<PlayerAction, { type: "SURRENDER" }>, events: GameEvent[]): void {
-  if (state.status !== "PLAYING") throw new GameRuleError(ErrorCode.GAME_ALREADY_OVER);
+  if (state.status === "FINISHED") throw new GameRuleError(ErrorCode.GAME_ALREADY_OVER);
   playerById(state, action.playerId);
   const winner = opponentOf(state, action.playerId);
   state.status = "FINISHED";
@@ -274,12 +291,41 @@ function surrender(state: GameState, action: Extract<PlayerAction, { type: "SURR
   events.push({ type: "GAME_OVER", winnerId: winner.playerId });
 }
 
+function confirmMulligan(state: GameState, action: Extract<PlayerAction, { type: "CONFIRM_MULLIGAN" }>, events: GameEvent[]): void {
+  if (state.status !== "MULLIGAN") throw new GameRuleError(ErrorCode.INVALID_ACTION);
+  const player = playerById(state, action.playerId);
+  if (state.mulliganConfirmedPlayerIds.includes(player.playerId)) throw new GameRuleError(ErrorCode.INVALID_ACTION);
+  const uniqueIds = [...new Set(action.cardInstanceIds)];
+  if (uniqueIds.length !== action.cardInstanceIds.length) throw new GameRuleError(ErrorCode.INVALID_ACTION);
+  const selected = uniqueIds.map((id) => {
+    const card = player.hand.find((candidate) => candidate.instanceId === id);
+    if (!card || card.definitionId === SECOND_PLAYER_BONUS_CARD) throw new GameRuleError(ErrorCode.INVALID_ACTION);
+    return card;
+  });
+  const selectedIds = new Set(uniqueIds);
+  player.hand = player.hand.filter((card) => !selectedIds.has(card.instanceId));
+  for (let index = 0; index < selected.length; index += 1) {
+    const replacement = player.deck.shift();
+    if (replacement) player.hand.push(replacement);
+  }
+  const random = new SeededRandom(state.randomSeed + state.revision + state.mulliganConfirmedPlayerIds.length + 1);
+  player.deck = random.shuffle([...player.deck, ...selected]);
+  state.mulliganConfirmedPlayerIds.push(player.playerId);
+  events.push({ type: "MULLIGAN_CONFIRMED", playerId: player.playerId, replacedCount: selected.length });
+  if (state.mulliganConfirmedPlayerIds.length === 2) {
+    state.status = "PLAYING";
+    events.push({ type: "MULLIGAN_COMPLETE" });
+    startTurn(state, state.firstPlayerId, events);
+  }
+}
+
 export function executeAction(currentState: GameState, action: PlayerAction): GameResult {
   const state = cloneGameState(currentState);
   const events: GameEvent[] = [];
   if (action.type === "PLAY_CARD") playCard(state, action, events);
   else if (action.type === "ATTACK") attack(state, action, events);
   else if (action.type === "END_TURN") endTurn(state, action, events);
+  else if (action.type === "CONFIRM_MULLIGAN") confirmMulligan(state, action, events);
   else if (action.type === "SURRENDER") surrender(state, action, events);
   else throw new GameRuleError(ErrorCode.INVALID_ACTION);
   state.revision += 1;
@@ -295,9 +341,11 @@ function publicPlayer(player: PlayerState): PublicPlayerState {
   return {
     playerId: player.playerId,
     name: player.name,
+    faction: player.faction,
     health: player.health,
     mana: player.mana,
     maxMana: player.maxMana,
+    temporaryMana: player.temporaryMana,
     deckCount: player.deck.length,
     handCount: player.hand.length,
     board: player.board.map((minion) => {
@@ -324,7 +372,10 @@ export function createPlayerView(state: GameState, viewerId: string): PlayerView
     status: state.status,
     winnerId: state.winnerId,
     stateRevision: state.revision,
-    opponentConnected: true
+    opponentConnected: true,
+    firstPlayerId: state.firstPlayerId,
+    mulliganConfirmed: state.mulliganConfirmedPlayerIds.includes(viewerId),
+    opponentMulliganConfirmed: state.mulliganConfirmedPlayerIds.includes(opponent.playerId)
   };
 }
 
@@ -333,6 +384,7 @@ export function createPlayerEvents(events: readonly GameEvent[], viewerId: strin
     if (event.type === "CARD_DRAWN" && event.playerId !== viewerId) {
       return { type: "CARD_DRAWN", playerId: event.playerId };
     }
+    if (event.type === "BONUS_CARD_GRANTED" && event.playerId !== viewerId) return { type: "BONUS_CARD_GRANTED", playerId: event.playerId };
     return { ...event };
   });
 }

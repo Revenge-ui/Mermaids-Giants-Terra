@@ -16,7 +16,10 @@ namespace RiftboundLauncher
         private const string HealthUrl = "http://127.0.0.1:3001/health";
         private const string FrontendUrl = "http://127.0.0.1:5173";
         private readonly Label statusLabel;
-        private readonly Button openButton;
+        private readonly ProgressBar progressBar;
+        private readonly Label percentLabel;
+        private readonly Button logButton;
+        private readonly Button exitButton;
         private readonly string projectRoot;
         private readonly string portableRoot;
         private readonly List<Process> ownedProcesses = new List<Process>();
@@ -24,9 +27,9 @@ namespace RiftboundLauncher
 
         public LauncherForm()
         {
-            Text = "裂隙牌局启动器";
+            Text = "Mermaids-Giants-Terra";
             Width = 470;
-            Height = 250;
+            Height = 230;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
@@ -34,13 +37,15 @@ namespace RiftboundLauncher
             ForeColor = Color.FromArgb(236, 227, 207);
             Font = new Font("Microsoft YaHei UI", 10F);
 
-            var title = new Label { Text = "✦  裂隙牌局", AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Microsoft YaHei UI", 22F, FontStyle.Bold), ForeColor = Color.FromArgb(232, 197, 119), Left = 20, Top = 22, Width = 414, Height = 48 };
-            statusLabel = new Label { Text = "正在准备本地游戏……", AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Left = 25, Top = 82, Width = 404, Height = 45 };
-            openButton = new Button { Text = "打开游戏", Left = 86, Top = 143, Width = 130, Height = 38, Enabled = false, BackColor = Color.FromArgb(95, 72, 32), FlatStyle = FlatStyle.Flat };
-            var exitButton = new Button { Text = "关闭", Left = 238, Top = 143, Width = 130, Height = 38, BackColor = Color.FromArgb(48, 50, 57), FlatStyle = FlatStyle.Flat };
-            openButton.Click += delegate { OpenGame(); };
+            var title = new Label { Text = "Mermaids-Giants-Terra", AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Georgia", 19F, FontStyle.Bold), ForeColor = Color.FromArgb(232, 197, 119), Left = 20, Top = 25, Width = 414, Height = 42 };
+            statusLabel = new Label { Text = "Loading...", AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Left = 25, Top = 72, Width = 404, Height = 28 };
+            progressBar = new ProgressBar { Left = 65, Top = 108, Width = 324, Height = 19, Minimum = 0, Maximum = 100, Value = 5, Style = ProgressBarStyle.Continuous };
+            percentLabel = new Label { Text = "5%", AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Left = 25, Top = 132, Width = 404, Height = 24 };
+            logButton = new Button { Text = "查看日志", Left = 91, Top = 156, Width = 125, Height = 32, Visible = false, BackColor = Color.FromArgb(95, 72, 32), FlatStyle = FlatStyle.Flat };
+            exitButton = new Button { Text = "退出", Left = 238, Top = 156, Width = 125, Height = 32, Visible = false, BackColor = Color.FromArgb(48, 50, 57), FlatStyle = FlatStyle.Flat };
+            logButton.Click += delegate { OpenLog(); };
             exitButton.Click += delegate { Close(); };
-            Controls.Add(title); Controls.Add(statusLabel); Controls.Add(openButton); Controls.Add(exitButton);
+            Controls.Add(title); Controls.Add(statusLabel); Controls.Add(progressBar); Controls.Add(percentLabel); Controls.Add(logButton); Controls.Add(exitButton);
 
             portableRoot = FindPortableRoot();
             projectRoot = FindProjectRoot();
@@ -73,11 +78,14 @@ namespace RiftboundLauncher
         {
             try
             {
-                if (await AreGameServicesHealthyAsync()) { Ready("游戏服务已经运行。", true); return; }
+                SetProgress(12);
+                if (await AreGameServicesHealthyAsync()) { Ready(); return; }
+                SetProgress(22);
                 if (IsPortOccupied(3001)) throw new InvalidOperationException("后端端口 3001 已被其他程序占用，请先关闭占用该端口的程序。");
                 if (IsPortOccupied(5173)) throw new InvalidOperationException("前端端口 5173 已被其他程序占用，请先关闭占用该端口的程序。");
                 if (portableRoot != null)
                 {
+                    SetProgress(42);
                     await StartPortableGameAsync();
                     return;
                 }
@@ -87,7 +95,7 @@ namespace RiftboundLauncher
                 if (!CommandAvailable("node.exe", "--version") || !CommandAvailable("cmd.exe", "/d /s /c \"npm --version\""))
                     throw new InvalidOperationException("没有找到 Node.js/npm。请从 Node.js 官方网站安装项目要求的 Node.js LTS。");
 
-                statusLabel.Text = "正在启动前端（5173）和后端（3001）……";
+                SetProgress(45);
                 var startInfo = new ProcessStartInfo("cmd.exe", "/d /s /c \"npm run dev\"");
                 startInfo.WorkingDirectory = projectRoot;
                 StartOwnedProcess(startInfo);
@@ -97,14 +105,13 @@ namespace RiftboundLauncher
             {
                 WriteDiagnostic(error.ToString());
                 StopOwnedServer();
-                statusLabel.Text = "启动失败";
-                MessageBox.Show(this, error.Message, "裂隙牌局启动失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowFailure();
             }
         }
 
         private async Task StartPortableGameAsync()
         {
-            statusLabel.Text = "正在启动便携版游戏……";
+            SetProgress(50);
             var runtime = Path.Combine(portableRoot, "runtime", "node.exe");
 
             var backend = CreateHiddenProcess(runtime, "\"" + Path.Combine(portableRoot, "app", "server.mjs") + "\"", portableRoot);
@@ -142,6 +149,8 @@ namespace RiftboundLauncher
             startInfo.RedirectStandardError = true;
             var process = Process.Start(startInfo);
             if (process == null) throw new InvalidOperationException("无法创建游戏服务进程。");
+            process.OutputDataReceived += delegate(object sender, DataReceivedEventArgs args) { if (!string.IsNullOrWhiteSpace(args.Data)) WriteDiagnostic("[service] " + args.Data); };
+            process.ErrorDataReceived += delegate(object sender, DataReceivedEventArgs args) { if (!string.IsNullOrWhiteSpace(args.Data)) WriteDiagnostic("[service-error] " + args.Data); };
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
             ownedProcesses.Add(process);
@@ -152,9 +161,10 @@ namespace RiftboundLauncher
             for (var attempt = 0; attempt < 80; attempt += 1)
             {
                 if (ownedProcesses.Exists(process => process.HasExited)) throw new InvalidOperationException(exitedMessage);
+                SetProgress(Math.Min(95, 52 + attempt / 2));
                 if (await AreGameServicesHealthyAsync())
                 {
-                    Ready("游戏已启动：前端 5173，后端 3001。关闭此窗口将同时关闭本地服务。", true);
+                    Ready();
                     return;
                 }
                 await Task.Delay(250);
@@ -164,15 +174,36 @@ namespace RiftboundLauncher
 
         private static void WriteDiagnostic(string message)
         {
-            try { File.AppendAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "launcher-error.log"), DateTime.Now.ToString("s") + " " + message + Environment.NewLine); }
+            try { File.AppendAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "launcher-error.txt"), DateTime.Now.ToString("s") + " " + message + Environment.NewLine); }
             catch { }
         }
 
-        private void Ready(string message, bool openBrowser)
+        private void SetProgress(int value)
         {
-            statusLabel.Text = message;
-            openButton.Enabled = true;
-            if (openBrowser && Environment.GetEnvironmentVariable("CARDGAME_LAUNCHER_NO_BROWSER") != "1") OpenGame();
+            progressBar.Value = Math.Max(0, Math.Min(100, value));
+            percentLabel.Text = progressBar.Value + "%";
+        }
+
+        private async void Ready()
+        {
+            SetProgress(100);
+            statusLabel.Text = "Ready";
+            await Task.Delay(450);
+            if (Environment.GetEnvironmentVariable("CARDGAME_LAUNCHER_NO_BROWSER") != "1") OpenGame();
+            WindowState = FormWindowState.Minimized;
+        }
+
+        private void ShowFailure()
+        {
+            statusLabel.Text = "启动失败";
+            logButton.Visible = true;
+            exitButton.Visible = true;
+        }
+
+        private void OpenLog()
+        {
+            try { Process.Start(new ProcessStartInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "launcher-error.txt")) { UseShellExecute = true }); }
+            catch { }
         }
 
         private static bool CommandAvailable(string file, string arguments)
@@ -222,10 +253,10 @@ namespace RiftboundLauncher
             return await IsCardGameHealthyAsync() && await IsFrontendHealthyAsync();
         }
 
-        private static void OpenGame()
+        private void OpenGame()
         {
             try { Process.Start(new ProcessStartInfo(GameUrl) { UseShellExecute = true }); }
-            catch (Exception error) { MessageBox.Show("无法打开默认浏览器：" + error.Message, "裂隙牌局", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+            catch (Exception error) { WriteDiagnostic(error.ToString()); ShowFailure(); }
         }
 
         private void OnLauncherClosing(object sender, FormClosingEventArgs eventArgs)

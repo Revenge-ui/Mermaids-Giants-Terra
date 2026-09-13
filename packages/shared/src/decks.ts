@@ -1,16 +1,20 @@
+import type { CardFaction, DeckFaction } from "./enums/index.js";
+
 export const REQUIRED_DECK_SIZE = 30;
 
 export interface DeckSubmission {
   deckId: string;
+  faction: DeckFaction;
   cards: Record<string, number>;
 }
 
 export interface DeckCatalogEntry {
   id: string;
+  faction: CardFaction;
   deckLimit?: number;
 }
 
-export type DeckValidationErrorCode = "TOO_FEW_CARDS" | "TOO_MANY_CARDS" | "UNKNOWN_CARD" | "INVALID_COUNT" | "COPY_LIMIT" | "NOT_OWNED";
+export type DeckValidationErrorCode = "TOO_FEW_CARDS" | "TOO_MANY_CARDS" | "UNKNOWN_CARD" | "INVALID_COUNT" | "COPY_LIMIT" | "NOT_OWNED" | "FACTION_MISMATCH";
 
 export interface DeckValidationError {
   code: DeckValidationErrorCode;
@@ -25,8 +29,12 @@ export interface DeckValidationResult {
   errors: DeckValidationError[];
 }
 
+export function isCardAllowedInDeck(deckFaction: DeckFaction, card: Pick<DeckCatalogEntry, "faction">): boolean {
+  return card.faction === "COMMON" || card.faction === deckFaction;
+}
+
 export function validateDeck(
-  deck: Pick<DeckSubmission, "cards">,
+  deck: Pick<DeckSubmission, "cards" | "faction">,
   catalog: readonly DeckCatalogEntry[],
   collection?: Readonly<Record<string, number>>
 ): DeckValidationResult {
@@ -39,6 +47,7 @@ export function validateDeck(
     if (!Number.isInteger(count) || count < 0) { errors.push({ code: "INVALID_COUNT", cardId, actual: count }); continue; }
     totalCards += count;
     if (definition && count > (definition.deckLimit ?? 2)) errors.push({ code: "COPY_LIMIT", cardId, actual: count, expected: definition.deckLimit ?? 2 });
+    if (definition && count > 0 && !isCardAllowedInDeck(deck.faction, definition)) errors.push({ code: "FACTION_MISMATCH", cardId });
     if (collection && count > (collection[cardId] ?? 0)) errors.push({ code: "NOT_OWNED", cardId, actual: count, expected: collection[cardId] ?? 0 });
   }
   if (totalCards < REQUIRED_DECK_SIZE) errors.unshift({ code: "TOO_FEW_CARDS", actual: totalCards, expected: REQUIRED_DECK_SIZE });

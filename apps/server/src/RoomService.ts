@@ -136,11 +136,11 @@ export class RoomService {
     const gameId = `GAME_${room.roomId}_${now}`;
     const first = room.players[0]!;
     const initial = createGame(gameId, room.roomId, [
-      { playerId: first.playerId, name: first.name, deckDefinitionIds: first.deck ? this.validatedDefinitionIds(first.deck) : undefined },
-      { playerId: player.playerId, name: player.name, deckDefinitionIds: player.deck ? this.validatedDefinitionIds(player.deck) : undefined }
+      { playerId: first.playerId, name: first.name, faction: first.deck?.faction, deckDefinitionIds: first.deck ? this.validatedDefinitionIds(first.deck) : undefined },
+      { playerId: player.playerId, name: player.name, faction: player.deck?.faction, deckDefinitionIds: player.deck ? this.validatedDefinitionIds(player.deck) : undefined }
     ], randomInt(1, 0x7fffffff));
     room.game = initial.state;
-    room.status = "PLAYING";
+    room.status = initial.state.status;
     this.logger.info("game_started", { roomId: room.roomId, gameId });
     return { room, initial, session: this.sessionFor(room, player) };
   }
@@ -153,7 +153,7 @@ export class RoomService {
     const human = this.createPlayer(socketId, playerName, deck);
     const ai: RoomPlayer = {
       playerId: `AI_${randomUUID()}`,
-      name: "石桌守卫",
+      name: "人类新神",
       sessionToken: newSessionToken(),
       connected: true,
       isAi: true,
@@ -162,12 +162,12 @@ export class RoomService {
     };
     const gameId = `GAME_AI_${roomId}_${now}`;
     const initial = createGame(gameId, roomId, [
-      { playerId: human.playerId, name: human.name, deckDefinitionIds: human.deck ? this.validatedDefinitionIds(human.deck) : undefined },
-      { playerId: ai.playerId, name: ai.name, deckDefinitionIds: this.validatedDefinitionIds(NORMAL_AI_DECK) }
+      { playerId: human.playerId, name: human.name, faction: human.deck?.faction, deckDefinitionIds: human.deck ? this.validatedDefinitionIds(human.deck) : undefined },
+      { playerId: ai.playerId, name: ai.name, faction: NORMAL_AI_DECK.faction, deckDefinitionIds: this.validatedDefinitionIds(NORMAL_AI_DECK) }
     ], randomInt(1, 0x7fffffff));
     const room: Room = {
       roomId,
-      status: "PLAYING",
+      status: initial.state.status,
       players: [human, ai],
       game: initial.state,
       createdAt: now,
@@ -184,7 +184,7 @@ export class RoomService {
     if (!room) throw new RoomServiceError(ErrorCode.ROOM_NOT_FOUND);
     const player = room.players.find((candidate) => candidate.playerId === playerId);
     if (!player || !tokenMatches(player.sessionToken, sessionToken)) throw new RoomServiceError(ErrorCode.INVALID_SESSION);
-    if (player.disconnectedAt !== undefined && now - player.disconnectedAt > this.options.reconnectGracePeriodMs && room.status === "PLAYING") {
+    if (player.disconnectedAt !== undefined && now - player.disconnectedAt > this.options.reconnectGracePeriodMs && (room.status === "PLAYING" || room.status === "MULLIGAN")) {
       throw new RoomServiceError(ErrorCode.RECONNECT_EXPIRED);
     }
 
@@ -256,7 +256,7 @@ export class RoomService {
   maintain(now = Date.now()): MaintenanceEvent[] {
     const events: MaintenanceEvent[] = [];
     for (const room of [...this.rooms.values()]) {
-      if (room.status === "PLAYING" && room.game) {
+      if ((room.status === "PLAYING" || room.status === "MULLIGAN") && room.game) {
         const expired = room.players.find((player) => !player.connected && player.disconnectedAt !== undefined && now - player.disconnectedAt >= this.options.reconnectGracePeriodMs);
         if (expired) {
           const result = executeAction(room.game, {
@@ -294,7 +294,7 @@ export class RoomService {
   toRoomState(room: Room): RoomState {
     return {
       roomId: room.roomId,
-      players: room.players.map(({ playerId, name, connected, ready }) => ({ playerId, name, connected, ready })),
+      players: room.players.map(({ playerId, name, connected, ready, deck }) => ({ playerId, name, faction: deck?.faction ?? "MERMAID", connected, ready })),
       status: room.status
     };
   }

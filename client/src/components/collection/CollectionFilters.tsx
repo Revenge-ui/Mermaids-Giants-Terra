@@ -3,7 +3,7 @@ import type { CardSort, CollectionFiltersState, ManaFilter } from "../../collect
 
 const MANA: readonly ManaFilter[] = ["ALL", 0, 1, 2, 3, 4, 5, 6, "7+"];
 const RARITIES: readonly CardRarity[] = ["COMMON", "RARE", "EPIC", "LEGENDARY"];
-const KEYWORDS: readonly CardKeyword[] = ["DAMAGE", "HEAL", "DRAW", "BUFF"];
+const KEYWORDS: readonly CardKeyword[] = ["DAMAGE", "HEAL", "DRAW", "BUFF", "GUARD", "CHARGE", "DRAIN", "BARRIER"];
 
 function toggle<T>(values: readonly T[], value: T): T[] { return values.includes(value) ? values.filter((item) => item !== value) : [...values, value]; }
 

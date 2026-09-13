@@ -20,4 +20,5 @@ export type PlayerAction =
       target: ActionTarget;
     }
   | ActionMetadata & { type: "END_TURN" }
+  | ActionMetadata & { type: "CONFIRM_MULLIGAN"; cardInstanceIds: string[] }
   | ActionMetadata & { type: "SURRENDER" };

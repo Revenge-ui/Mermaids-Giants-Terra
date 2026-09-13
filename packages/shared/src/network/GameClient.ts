@@ -131,6 +131,7 @@ export class GameClient {
   }
 
   endTurn(): Promise<PlayerActionResult> { return this.sendAction(this.action({ type: "END_TURN" })); }
+  confirmMulligan(cardInstanceIds: string[]): Promise<PlayerActionResult> { return this.sendAction(this.action({ type: "CONFIRM_MULLIGAN", cardInstanceIds })); }
   surrender(): Promise<PlayerActionResult> { return this.sendAction(this.action({ type: "SURRENDER" })); }
 
   sendAction(action: PlayerAction): Promise<PlayerActionResult> {

@@ -1,5 +1,8 @@
 export type CardType = "MINION" | "SPELL";
-export type GameStatus = "WAITING" | "PLAYING" | "FINISHED";
+export type CardFaction = "MERMAID" | "GIANT" | "COMMON";
+export type DeckFaction = Exclude<CardFaction, "COMMON">;
+export type CardRarity = "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
+export type GameStatus = "WAITING" | "MULLIGAN" | "PLAYING" | "FINISHED";
 export type PlatformName = "DEVELOPMENT" | "WECHAT" | "STEAM" | "EPIC";
 export type ConnectionStatus = "CONNECTING" | "CONNECTED" | "RECONNECTING" | "DISCONNECTED" | "FAILED";
 

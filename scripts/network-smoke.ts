@@ -10,7 +10,7 @@ import {
 const serverUrl = process.env.E2E_SERVER_URL ?? "http://localhost:3001";
 const alpha = new GameClient(serverUrl);
 const beta = new GameClient(serverUrl);
-const testDeck: DeckSubmission = { deckId: "E2E_DECK", cards: { CARD_000001: 2, CARD_000002: 2, CARD_000003: 2, CARD_000004: 2, CARD_000005: 2, CARD_000006: 2, CARD_000007: 2, CARD_000008: 2, CARD_000009: 2, CARD_000010: 2, CARD_000011: 2, CARD_000012: 2, CARD_000015: 2, CARD_000016: 2, CARD_000017: 2 } };
+const testDeck: DeckSubmission = { deckId: "E2E_DECK", faction: "MERMAID", cards: { "MER-M-001": 2, "MER-M-002": 2, "MER-M-003": 2, "MER-M-004": 2, "MER-M-005": 2, "MER-M-006": 2, "MER-M-007": 2, "MER-M-008": 2, "MER-M-009": 2, "MER-M-010": 2, "MER-M-011": 2, "MER-M-012": 2, "MER-M-013": 2, "MER-M-014": 2, "GEN-S-001": 2 } };
 
 function waitForConnection(client: GameClient): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -66,6 +66,35 @@ try {
   let [stateAlpha, stateBeta] = await Promise.all([initialAlpha, initialBeta]);
   assert.equal("hand" in stateAlpha.opponent, false);
   assert.equal("hand" in stateBeta.opponent, false);
+  assert.equal(stateAlpha.status, "MULLIGAN");
+  const firstInitial = stateAlpha.you.playerId === stateAlpha.firstPlayerId ? stateAlpha : stateBeta;
+  const secondInitial = stateAlpha.you.playerId !== stateAlpha.firstPlayerId ? stateAlpha : stateBeta;
+  assert.equal(firstInitial.you.hand.length, 3);
+  assert.equal(secondInitial.you.hand.filter((card) => card.definitionId !== "SPECIAL_BITCOIN_COIN").length, 4);
+  assert.equal(secondInitial.you.hand.some((card) => card.definitionId === "SPECIAL_BITCOIN_COIN"), true);
+  [stateAlpha, stateBeta] = await sendAndWait(() => { void alpha.confirmMulligan([]); });
+  assert.equal(stateAlpha.status, "MULLIGAN");
+  [stateAlpha, stateBeta] = await sendAndWait(() => { void beta.confirmMulligan([]); });
+  assert.equal(stateAlpha.status, "PLAYING");
+
+  const secondPlayerId = stateAlpha.firstPlayerId === stateAlpha.you.playerId ? stateBeta.you.playerId : stateAlpha.you.playerId;
+  if (stateAlpha.currentPlayerId !== secondPlayerId) {
+    const firstClient = stateAlpha.currentPlayerId === stateAlpha.you.playerId ? alpha : beta;
+    [stateAlpha, stateBeta] = await sendAndWait(() => { void firstClient.endTurn(); });
+  }
+  const secondClient = stateAlpha.you.playerId === secondPlayerId ? alpha : beta;
+  const secondState = stateAlpha.you.playerId === secondPlayerId ? stateAlpha : stateBeta;
+  const bitcoin = secondState.you.hand.find((card) => card.definitionId === "SPECIAL_BITCOIN_COIN")!;
+  const permanentMaxMana = secondState.you.maxMana;
+  const manaBeforeBitcoin = secondState.you.mana;
+  [stateAlpha, stateBeta] = await sendAndWait(() => { void secondClient.playCard(bitcoin.instanceId); });
+  const boostedSecond = stateAlpha.you.playerId === secondPlayerId ? stateAlpha : stateBeta;
+  assert.equal(boostedSecond.you.mana, manaBeforeBitcoin + 1);
+  assert.equal(boostedSecond.you.maxMana, permanentMaxMana);
+  assert.equal(boostedSecond.you.temporaryMana, 1);
+  [stateAlpha, stateBeta] = await sendAndWait(() => { void secondClient.endTurn(); });
+  const endedSecond = stateAlpha.you.playerId === secondPlayerId ? stateAlpha : stateBeta;
+  assert.equal(endedSecond.you.temporaryMana, 0);
 
   let playedMinion = false;
   let playedSpell = false;

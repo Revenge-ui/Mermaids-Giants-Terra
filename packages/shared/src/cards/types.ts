@@ -1,10 +1,12 @@
-import type { CardType } from "../enums/index.js";
+import type { CardFaction, CardRarity, CardType } from "../enums/index.js";
 
 export type EffectDefinition =
   | { type: "DEAL_DAMAGE"; amount: number; target: "ANY_ENEMY" }
   | { type: "HEAL"; amount: number; target: "FRIENDLY_HERO" }
   | { type: "DRAW_CARD"; amount: number }
-  | { type: "BUFF"; attack: number; health: number; target: "FRIENDLY_MINION" };
+  | { type: "BUFF"; attack: number; health: number; target: "FRIENDLY_MINION" }
+  | { type: "GAIN_TEMP_MANA"; amount: number }
+  | { type: "PROTOTYPE" };
 
 export interface BaseCardDefinition {
   id: string;
@@ -13,6 +15,12 @@ export interface BaseCardDefinition {
   nameKey: string;
   descriptionKey: string;
   rune: string;
+  faction: CardFaction;
+  rarity: CardRarity;
+  species?: string;
+  keywords?: readonly string[];
+  targetRule?: string;
+  implementationTags?: readonly string[];
   deckLimit?: number;
 }
 

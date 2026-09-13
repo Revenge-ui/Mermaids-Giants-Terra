@@ -26,8 +26,16 @@ test("rate limiter permits normal traffic and blocks bursts", () => {
   assert.equal(limiter.allow("socket:action", 2, 1_201), true);
 });
 
+test("runtime validation accepts bounded mulligan ids and rejects forged extra fields", () => {
+  const valid = { type: "CONFIRM_MULLIGAN", playerId: "P1", actionId: "MULLIGAN_01", clientSequence: 1, cardInstanceIds: ["CARD_A", "CARD_B"] };
+  assert.equal(playerActionSchema.safeParse(valid).success, true);
+  assert.equal(playerActionSchema.safeParse({ ...valid, cardInstanceIds: ["A", "B", "C", "D", "E"] }).success, false);
+  assert.equal(playerActionSchema.safeParse({ ...valid, enemyHand: ["SECRET"] }).success, false);
+});
+
 test("runtime validation rejects malformed deck submissions", () => {
   assert.equal(createRoomPayloadSchema.safeParse({ playerName: "甲" }).success, false);
-  assert.equal(createRoomPayloadSchema.safeParse({ playerName: "甲", deck: { deckId: "D1", cards: { CARD_000001: -1 } } }).success, false);
-  assert.equal(createRoomPayloadSchema.safeParse({ playerName: "甲", deck: { deckId: "D1", cards: { CARD_000001: 31 } } }).success, false);
+  assert.equal(createRoomPayloadSchema.safeParse({ playerName: "甲", deck: { deckId: "D1", faction: "MERMAID", cards: { "MER-M-001": -1 } } }).success, false);
+  assert.equal(createRoomPayloadSchema.safeParse({ playerName: "甲", deck: { deckId: "D1", faction: "MERMAID", cards: { "MER-M-001": 31 } } }).success, false);
+  assert.equal(createRoomPayloadSchema.safeParse({ playerName: "甲", deck: { deckId: "D1", faction: "PIRATE", cards: {} } }).success, false);
 });

@@ -5,6 +5,7 @@ const playerName = z.string().max(64);
 const roomId = z.string().regex(/^\d{6}$/);
 const deck = z.object({
   deckId: identifier,
+  faction: z.enum(["MERMAID", "GIANT"]),
   cards: z.record(z.string().min(1).max(80), z.number().int().min(0).max(30)).refine((cards) => Object.keys(cards).length <= 60)
 }).strict();
 const target = z.discriminatedUnion("type", [
@@ -28,5 +29,6 @@ export const playerActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("PLAY_CARD"), ...metadata, cardInstanceId: identifier, target: target.optional() }).strict(),
   z.object({ type: z.literal("ATTACK"), ...metadata, attackerId: identifier, target }).strict(),
   z.object({ type: z.literal("END_TURN"), ...metadata }).strict(),
+  z.object({ type: z.literal("CONFIRM_MULLIGAN"), ...metadata, cardInstanceIds: z.array(identifier).max(4) }).strict(),
   z.object({ type: z.literal("SURRENDER"), ...metadata }).strict()
 ]);

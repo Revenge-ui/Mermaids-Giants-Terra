@@ -1,4 +1,4 @@
-# 裂隙牌局（Riftbound Duel）0.4.4
+# Mermaids-Giants-Terra 0.4.4
 
 原创的 1v1 回合制卡牌游戏。0.4.4 支持本地收藏卡组进入人机与好友对战，服务器会重新校验并构建双方独立牌库。
 
@@ -19,7 +19,7 @@
 
 运行 `npm run package:windows` 后，发行包位于：
 
-`release/CardGame-v0.4.4-Windows.zip`
+`release/Mermaids-Giants-Terra-v0.4.4-Windows.zip`
 
 玩家只需完整解压 ZIP，然后双击其中的 `CardGame.exe`。便携包已经包含 Node.js 运行时、编译后的后端和静态前端，不需要安装 Node.js，不需要运行 npm，也不需要保留项目源码。
 

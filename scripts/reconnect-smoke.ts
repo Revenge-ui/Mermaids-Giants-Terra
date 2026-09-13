@@ -6,7 +6,7 @@ const alphaStore = new MemorySessionStore();
 const betaStore = new MemorySessionStore();
 const alpha = new GameClient(serverUrl, { sessionStore: alphaStore });
 let beta = new GameClient(serverUrl, { sessionStore: betaStore });
-const testDeck: DeckSubmission = { deckId: "RECONNECT_DECK", cards: { CARD_000001: 2, CARD_000002: 2, CARD_000003: 2, CARD_000004: 2, CARD_000005: 2, CARD_000006: 2, CARD_000007: 2, CARD_000008: 2, CARD_000009: 2, CARD_000010: 2, CARD_000011: 2, CARD_000012: 2, CARD_000015: 2, CARD_000016: 2, CARD_000017: 2 } };
+const testDeck: DeckSubmission = { ...{ deckId: "E2E_DECK", faction: "MERMAID", cards: { "MER-M-001": 2, "MER-M-002": 2, "MER-M-003": 2, "MER-M-004": 2, "MER-M-005": 2, "MER-M-006": 2, "MER-M-007": 2, "MER-M-008": 2, "MER-M-009": 2, "MER-M-010": 2, "MER-M-011": 2, "MER-M-012": 2, "MER-M-013": 2, "MER-M-014": 2, "GEN-S-001": 2 } }, deckId: "RECONNECT_DECK" };
 
 function waitConnected(client: GameClient): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -71,7 +71,17 @@ try {
   assert.deepEqual(restored.you.hand, betaInitial.you.hand);
   assert.equal("hand" in restored.opponent, false);
 
-  const current = alphaInitial.currentPlayerId === alphaInitial.you.playerId ? alpha : recovered;
+  const alphaAfterFirstConfirm = waitUpdate(alpha);
+  const betaAfterFirstConfirm = waitUpdate(recovered);
+  await alpha.confirmMulligan([]);
+  await Promise.all([alphaAfterFirstConfirm, betaAfterFirstConfirm]);
+  const alphaPlaying = waitUpdate(alpha);
+  const betaPlaying = waitUpdate(recovered);
+  await recovered.confirmMulligan([]);
+  const [playingAlpha, playingBeta] = await Promise.all([alphaPlaying, betaPlaying]);
+  assert.equal(playingAlpha.status, "PLAYING");
+
+  const current = playingAlpha.currentPlayerId === playingAlpha.you.playerId ? alpha : recovered;
   const alphaNext = waitUpdate(alpha);
   const recoveredNext = waitUpdate(recovered);
   const duplicateAction: PlayerAction = {
@@ -83,8 +93,8 @@ try {
   const actionResult = await current.sendAction(duplicateAction);
   assert.equal(actionResult.ok, true);
   const [nextAlpha, nextBeta] = await Promise.all([alphaNext, recoveredNext]);
-  assert.equal(nextAlpha.stateRevision, alphaInitial.stateRevision + 1);
-  assert.equal(nextBeta.stateRevision, betaInitial.stateRevision + 1);
+  assert.equal(nextAlpha.stateRevision, playingAlpha.stateRevision + 1);
+  assert.equal(nextBeta.stateRevision, playingBeta.stateRevision + 1);
   const duplicateResult = await current.sendAction(duplicateAction);
   assert.equal(duplicateResult.ok, true);
   assert.equal(duplicateResult.duplicate, true);

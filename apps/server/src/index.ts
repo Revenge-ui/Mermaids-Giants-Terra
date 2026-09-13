@@ -112,14 +112,14 @@ function cancelAiTurn(roomId: string): void {
 }
 
 function scheduleAiTurn(room: Room): void {
-  if (aiTimers.has(room.roomId) || !room.game || room.status !== "PLAYING") return;
-  const aiPlayer = room.players.find((player) => player.isAi && player.playerId === room.game?.currentPlayerId);
+  if (aiTimers.has(room.roomId) || !room.game || (room.status !== "PLAYING" && room.status !== "MULLIGAN")) return;
+  const aiPlayer = room.players.find((player) => player.isAi && (room.game?.status === "MULLIGAN" ? !room.game.mulliganConfirmedPlayerIds.includes(player.playerId) : player.playerId === room.game?.currentPlayerId));
   if (!aiPlayer) return;
   const timer = setTimeout(() => {
     aiTimers.delete(room.roomId);
     const currentRoom = roomService.getRoom(room.roomId);
-    if (!currentRoom?.game || currentRoom.status !== "PLAYING") return cancelAiTurn(room.roomId);
-    const currentAi = currentRoom.players.find((player) => player.isAi && player.playerId === currentRoom.game?.currentPlayerId);
+    if (!currentRoom?.game || (currentRoom.status !== "PLAYING" && currentRoom.status !== "MULLIGAN")) return cancelAiTurn(room.roomId);
+    const currentAi = currentRoom.players.find((player) => player.isAi && (currentRoom.game?.status === "MULLIGAN" ? !currentRoom.game.mulliganConfirmedPlayerIds.includes(player.playerId) : player.playerId === currentRoom.game?.currentPlayerId));
     if (!currentAi) return;
 
     const previous = aiTurnActions.get(room.roomId);
@@ -128,9 +128,12 @@ function scheduleAiTurn(room: Room): void {
     counter.sequence += 1;
     aiTurnActions.set(room.roomId, counter);
     const meta = { playerId: currentAi.playerId, actionId: `AI_ACTION_${currentRoom.game.gameId}_${counter.sequence}`, clientSequence: counter.sequence };
-    const action = counter.count >= MAX_AI_ACTIONS_PER_TURN
-      ? { ...meta, type: "END_TURN" as const }
-      : gameAi.chooseAction({ view: createPlayerView(currentRoom.game, currentAi.playerId), actionId: meta.actionId, clientSequence: meta.clientSequence });
+    const view = createPlayerView(currentRoom.game, currentAi.playerId);
+    const action: PlayerAction | null = currentRoom.game.status === "MULLIGAN"
+      ? { ...meta, type: "CONFIRM_MULLIGAN", cardInstanceIds: gameAi.chooseMulligan(view) }
+      : counter.count >= MAX_AI_ACTIONS_PER_TURN
+        ? { ...meta, type: "END_TURN" }
+        : gameAi.chooseAction({ view, actionId: meta.actionId, clientSequence: meta.clientSequence });
     if (!action) return;
     try {
       const result = roomService.applyAiAction(room.roomId, action);

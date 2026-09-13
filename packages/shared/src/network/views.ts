@@ -1,12 +1,14 @@
 import type { CardView, MinionView } from "../cards/types.js";
-import type { GameStatus } from "../enums/index.js";
+import type { DeckFaction, GameStatus } from "../enums/index.js";
 
 export interface PublicPlayerState {
   playerId: string;
   name: string;
+  faction: DeckFaction;
   health: number;
   mana: number;
   maxMana: number;
+  temporaryMana: number;
   deckCount: number;
   handCount: number;
   board: MinionView[];
@@ -23,11 +25,15 @@ export interface PlayerViewState {
   winnerId?: string;
   stateRevision: number;
   opponentConnected: boolean;
+  firstPlayerId: string;
+  mulliganConfirmed: boolean;
+  opponentMulliganConfirmed: boolean;
 }
 
 export interface RoomPlayer {
   playerId: string;
   name: string;
+  faction: DeckFaction;
   connected: boolean;
   ready?: boolean;
 }

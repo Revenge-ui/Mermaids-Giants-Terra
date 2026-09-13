@@ -7,8 +7,8 @@ import { RoomService, RoomServiceError } from "./RoomService.js";
 
 const options = { reconnectGracePeriodMs: 1_000, waitingRoomTtlMs: 2_000, finishedRoomTtlMs: 3_000 };
 const service = () => new RoomService(new Logger("error"), options);
-const DECK_A: DeckSubmission = { deckId: "DECK_A", cards: { CARD_000001: 2, CARD_000002: 2, CARD_000003: 2, CARD_000004: 2, CARD_000005: 2, CARD_000006: 2, CARD_000007: 2, CARD_000008: 2, CARD_000009: 2, CARD_000010: 2, CARD_000011: 2, CARD_000012: 2, CARD_000015: 2, CARD_000016: 2, CARD_000017: 2 } };
-const DECK_B: DeckSubmission = { deckId: "DECK_B", cards: { CARD_000001: 2, CARD_000002: 2, CARD_000003: 2, CARD_000004: 2, CARD_000005: 2, CARD_000006: 2, CARD_000007: 2, CARD_000008: 2, CARD_000009: 2, CARD_000010: 2, CARD_000011: 2, CARD_000012: 2, CARD_000018: 2, CARD_000019: 2, CARD_000020: 2 } };
+const DECK_A: DeckSubmission = { deckId: "DECK_A", faction: "MERMAID", cards: { "MER-M-001": 2, "MER-M-002": 2, "MER-M-003": 2, "MER-M-004": 2, "MER-M-005": 2, "MER-M-006": 2, "MER-M-007": 2, "MER-M-008": 2, "MER-M-009": 2, "MER-M-010": 2, "MER-M-011": 2, "MER-M-012": 2, "MER-M-013": 2, "MER-M-014": 2, "GEN-S-001": 2 } };
+const DECK_B: DeckSubmission = { deckId: "DECK_B", faction: "GIANT", cards: { "GIA-M-001": 2, "GIA-M-002": 2, "GIA-M-003": 2, "GIA-M-004": 2, "GIA-M-005": 2, "GIA-M-006": 2, "GIA-M-007": 2, "GIA-M-008": 2, "GIA-M-009": 2, "GIA-M-010": 2, "GIA-M-011": 2, "GIA-M-012": 2, "GIA-M-013": 2, "GIA-M-014": 2, "GEN-S-001": 2 } };
 
 function expectCode(operation: () => unknown, code: ErrorCode): void {
   assert.throws(operation, (error) => error instanceof RoomServiceError && error.code === code);
@@ -18,6 +18,8 @@ function startedRoom() {
   const rooms = service();
   const first = rooms.createRoom("SOCKET_1", "甲", 100);
   const second = rooms.joinRoom(first.room.roomId, "SOCKET_2", "乙", 101);
+  rooms.applyPlayerAction("SOCKET_1", { type: "CONFIRM_MULLIGAN", playerId: first.session.playerId, cardInstanceIds: [], actionId: "SETUP_MULLIGAN_1", clientSequence: 0 }, 102);
+  rooms.applyPlayerAction("SOCKET_2", { type: "CONFIRM_MULLIGAN", playerId: second.session.playerId, cardInstanceIds: [], actionId: "SETUP_MULLIGAN_2", clientSequence: 0 }, 103);
   return { rooms, room: second.room, first: first.session, second: second.session };
 }
 
@@ -82,6 +84,9 @@ test("9: reconnect views still exclude the opponent hand", () => {
 test("AI room starts immediately and AI actions use the normal rule engine", () => {
   const rooms = service();
   const created = rooms.createAiGame("SOCKET_HUMAN", "旅者", 300);
+  assert.equal(created.room.status, "MULLIGAN");
+  rooms.applyPlayerAction("SOCKET_HUMAN", { type: "CONFIRM_MULLIGAN", playerId: created.session.playerId, cardInstanceIds: [], actionId: "HUMAN_MULLIGAN", clientSequence: 0 }, 301);
+  rooms.applyAiAction(created.room.roomId, { type: "CONFIRM_MULLIGAN", playerId: created.aiPlayerId, cardInstanceIds: [], actionId: "AI_MULLIGAN", clientSequence: 0 }, 302);
   assert.equal(created.room.status, "PLAYING");
   assert.equal(created.room.players.length, 2);
   assert.equal(created.room.players.find((player) => player.playerId === created.aiPlayerId)?.isAi, true);
@@ -89,8 +94,9 @@ test("AI room starts immediately and AI actions use the normal rule engine", () 
 
   const aiTurn = created.room.game!.currentPlayerId === created.aiPlayerId;
   if (aiTurn) {
-    const result = rooms.applyAiAction(created.room.roomId, endTurn(created.aiPlayerId, "AI_ACTION_0001"), 301);
-    assert.equal(result.result.state.revision, 1);
+    const beforeRevision = created.room.game!.revision;
+    const result = rooms.applyAiAction(created.room.roomId, endTurn(created.aiPlayerId, "AI_ACTION_0001"), 303);
+    assert.equal(result.result.state.revision, beforeRevision + 1);
   } else {
     expectCode(() => rooms.applyAiAction(created.room.roomId, endTurn(created.session.playerId, "HUMAN_FAKE_AI"), 301), ErrorCode.PLAYER_ID_MISMATCH);
   }
@@ -163,8 +169,22 @@ test("socket identity cannot submit another player's action", () => {
   assert.notEqual(first.playerId, second.playerId);
 });
 
+test("online game waits for both players to confirm mulligan independently", () => {
+  const rooms = service();
+  const first = rooms.createRoom("SOCKET_M1", "甲", DECK_A, 110);
+  const joined = rooms.joinRoom(first.room.roomId, "SOCKET_M2", "乙", DECK_B, 111);
+  assert.equal(joined.room.status, "MULLIGAN");
+  rooms.applyPlayerAction("SOCKET_M1", { type: "CONFIRM_MULLIGAN", playerId: first.session.playerId, cardInstanceIds: [], actionId: "MULLIGAN_ONLY_A", clientSequence: 1 }, 112);
+  assert.equal(joined.room.status, "MULLIGAN");
+  const opponentView = createPlayerView(joined.room.game!, joined.session.playerId);
+  assert.equal(opponentView.opponentMulliganConfirmed, true);
+  assert.equal("hand" in opponentView.opponent, false);
+  rooms.applyPlayerAction("SOCKET_M2", { type: "CONFIRM_MULLIGAN", playerId: joined.session.playerId, cardInstanceIds: [], actionId: "MULLIGAN_ONLY_B", clientSequence: 1 }, 113);
+  assert.equal(joined.room.status, "PLAYING");
+});
+
 test("server rejects an invalid submitted deck before room creation", () => {
-  expectCode(() => service().createRoom("SOCKET_BAD", "甲", { deckId: "BAD", cards: { CARD_000001: 29 } }), ErrorCode.INVALID_DECK);
+  expectCode(() => service().createRoom("SOCKET_BAD", "甲", { deckId: "BAD", faction: "MERMAID", cards: { "MER-M-001": 29 } }), ErrorCode.INVALID_DECK);
 });
 
 test("online players receive separate authoritative decks from their submissions", () => {
@@ -172,21 +192,26 @@ test("online players receive separate authoritative decks from their submissions
   const first = rooms.createRoom("SOCKET_A", "甲", DECK_A, 500);
   const joined = rooms.joinRoom(first.room.roomId, "SOCKET_B", "乙", DECK_B, 501);
   const game = joined.room.game!;
-  const firstCards = [...game.players[0].deck, ...game.players[0].hand].map((card) => card.definitionId);
-  const secondCards = [...game.players[1].deck, ...game.players[1].hand].map((card) => card.definitionId);
+  const firstCards = [...game.players[0].deck, ...game.players[0].hand].map((card) => card.definitionId).filter((id) => id !== "SPECIAL_BITCOIN_COIN");
+  const secondCards = [...game.players[1].deck, ...game.players[1].hand].map((card) => card.definitionId).filter((id) => id !== "SPECIAL_BITCOIN_COIN");
   assert.equal(firstCards.length, 30);
   assert.equal(secondCards.length, 30);
-  assert.equal(firstCards.filter((id) => id === "CARD_000015").length, 2);
-  assert.equal(secondCards.filter((id) => id === "CARD_000018").length, 2);
-  assert.equal(new Set([...game.players[0].deck, ...game.players[0].hand, ...game.players[1].deck, ...game.players[1].hand].map((card) => card.instanceId)).size, 60);
+  assert.equal(firstCards.filter((id) => id === "MER-M-001").length, 2);
+  assert.equal(secondCards.filter((id) => id === "GIA-M-001").length, 2);
+  assert.equal(game.players[0].faction, "MERMAID");
+  assert.equal(game.players[1].faction, "GIANT");
+  const productionInstances = [...game.players[0].deck, ...game.players[0].hand, ...game.players[1].deck, ...game.players[1].hand].filter((card) => card.definitionId !== "SPECIAL_BITCOIN_COIN");
+  assert.equal(new Set(productionInstances.map((card) => card.instanceId)).size, 60);
 });
 
 test("AI uses its independent validated deck while the human uses the selected deck", () => {
-  const created = service().createAiGame("SOCKET_HUMAN", "旅者", DECK_B, 600);
+  const created = service().createAiGame("SOCKET_HUMAN", "旅者", DECK_A, 600);
   const human = created.room.game!.players.find((player) => player.playerId === created.session.playerId)!;
   const ai = created.room.game!.players.find((player) => player.playerId === created.aiPlayerId)!;
-  assert.equal([...human.deck, ...human.hand].filter((card) => card.definitionId === "CARD_000018").length, 2);
-  assert.equal([...ai.deck, ...ai.hand].filter((card) => card.definitionId === "CARD_000015").length, 2);
+  assert.equal([...human.deck, ...human.hand].filter((card) => card.definitionId === "MER-M-001").length, 2);
+  assert.equal([...ai.deck, ...ai.hand].filter((card) => card.definitionId === "GIA-M-001").length, 2);
+  assert.equal(human.faction, "MERMAID");
+  assert.equal(ai.faction, "GIANT");
   assert.notEqual(human.deck, ai.deck);
 });
 
@@ -194,8 +219,13 @@ test("room views never expose submitted deck lists", () => {
   const rooms = service();
   const created = rooms.createRoom("SOCKET_A", "甲", DECK_A, 700);
   const publicRoom = rooms.toRoomState(created.room);
-  assert.equal(JSON.stringify(publicRoom).includes("CARD_000001"), false);
+  assert.equal(JSON.stringify(publicRoom).includes("MER-M-001"), false);
   assert.equal(publicRoom.players[0]?.ready, true);
+});
+
+test("server rejects a forged mixed-faction deck", () => {
+  const mixed: DeckSubmission = { ...DECK_A, deckId: "MIXED", cards: { ...DECK_A.cards, "MER-M-001": 0, "GIA-M-001": 2 } };
+  expectCode(() => service().createRoom("SOCKET_MIXED", "甲", mixed), ErrorCode.INVALID_DECK);
 });
 
 test("reconnect preserves the existing shuffled deck instead of rebuilding it", () => {
